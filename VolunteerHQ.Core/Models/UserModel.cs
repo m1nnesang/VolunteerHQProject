@@ -19,6 +19,7 @@ public class UserModel
     public string? AvatarPath { get; set; }
     
     public UserRoles Role { get; set; }
+    public VolunteerProfileModel? VolunteerProfile { get; set; }
     
     public bool IsBanned { get; set; }
     public string? BanReason { get; set; }

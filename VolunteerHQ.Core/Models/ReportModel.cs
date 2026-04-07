@@ -6,10 +6,10 @@ public class ReportModel
 {
     public int Id { get; set; }
     
-    public int ReporterUserId { get; set; }
+    public int? ReporterId { get; set; }
     public UserModel? ReporterUser { get; set; }
     
-    public int ReportedUserId { get; set; }
+    public int? ReportedId { get; set; }
     public UserModel? ReportedUser { get; set; }
     
     public required string Reason { get; set; }

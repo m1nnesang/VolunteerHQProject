@@ -6,7 +6,7 @@ public class JoinRequestModel
 {
     public int Id { get; set; }
 
-    public int UserId { get; set; }
+    public int? UserId { get; set; }
     public UserModel? User { get; set; }
 
     public int OrganizationId { get; set; }
