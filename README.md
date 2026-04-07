@@ -8,13 +8,14 @@ A platform for coordinating volunteers and military fundraising.
 erDiagram
     User {
         int Id PK
-        string Email
+        date BirthDate
         string PasswordHash
+        string Email
         string FirstName
-        string LastName
+        string SecondName
         string City
         string AvatarPath
-        string Role
+        int Role
         bool IsBanned
         string BanReason
         datetime BannedAt
@@ -23,18 +24,17 @@ erDiagram
 
     VolunteerProfile {
         int Id PK
-        int UserId FK
-        date BirthDate
         string Bio
+        string CvFilePath
         string Skills
         string Experience
-        string CVFilePath
+        int UserId FK
         datetime CreatedAt
     }
 
     Organization {
         int Id PK
-        string Name
+        string OrganizationName
         string City
         string Description
         datetime CreatedAt
@@ -44,7 +44,7 @@ erDiagram
         int Id PK
         int UserId FK
         int OrganizationId FK
-        string Role
+        int MemberRole
         datetime JoinedAt
     }
 
@@ -54,10 +54,9 @@ erDiagram
         int OrganizationId FK
         string Bio
         string Skills
-        string Experience
-        string CVFilePath
+        string CvFilePath
         string Motivation
-        string Status
+        int Status
         datetime CreatedAt
         datetime ReviewedAt
         int ReviewedByUserId FK
@@ -67,16 +66,16 @@ erDiagram
         int Id PK
         int UserId FK
         string FirstName
-        string LastName
+        string SecondName
         string Bio
-        string Skills
         string Experience
-        string CVFilePath
+        string Skills
+        string CvFilePath
         string ProposedName
         string City
-        string Description
         string Purpose
-        string Status
+        string Description
+        int Status
         datetime CreatedAt
         datetime ReviewedAt
         string AdminComment
@@ -84,11 +83,11 @@ erDiagram
 
     MilitaryUnit {
         int Id PK
-        string Name
-        bool IsNameHidden
+        string UnitName
         string ContactPersonName
         string Login
         string PasswordHash
+        bool IsNameHidden
         datetime CreatedAt
     }
 
@@ -99,9 +98,9 @@ erDiagram
         string Description
         decimal TotalGoal
         decimal CurrentProgress
-        string Importance
+        int Importance
         date Deadline
-        string Status
+        int Status
         datetime CreatedAt
     }
 
@@ -144,9 +143,9 @@ erDiagram
     Subscription {
         int Id PK
         int UserId FK
-        string TargetType
+        int Target
         int TargetId
-        datetime CreatedAt
+        datetime SubscribedAt
     }
 
     Notification {
@@ -155,16 +154,16 @@ erDiagram
         string Text
         string Link
         bool IsRead
-        datetime CreatedAt
+        datetime SentAt
     }
 
     Report {
         int Id PK
         int ReporterId FK
-        int ReportedUserId FK
+        int ReportedId FK
         string Reason
-        string Category
-        string Status
+        int Category
+        int Status
         datetime CreatedAt
         datetime ReviewedAt
         string AdminComment
