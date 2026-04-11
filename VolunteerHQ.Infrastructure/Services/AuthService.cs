@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using VolunteerHQ.Core.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using VolunteerHQ.Core.DTOs.UserDTOs;
 using VolunteerHQ.Core.Exceptions;
 
 #endregion
@@ -24,7 +25,9 @@ public class AuthService
         _db = db;
         _configuration = iConfiguration;
     }
-
+    
+    
+    #region AuthResponseDto
     public async Task<AuthResponseDto> Register(RegisterDto dto)
     {
         var emailExist = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email); //email check
@@ -42,6 +45,7 @@ public class AuthService
             PasswordHash = passwordHash,
             FirstName = dto.FirstName,
             SecondName = dto.SecondName,
+            BirthDate = dto.BirthDate,
             Role = 0,
             CreatedAt = DateTime.UtcNow,
         };
@@ -52,7 +56,6 @@ public class AuthService
         var token = GenerateToken(user);
         
         return new AuthResponseDto(user.Id, user.Role, token);
-
     }
 
     public async Task<AuthResponseDto> Login(LoginDto dto)
@@ -73,8 +76,7 @@ public class AuthService
 
         return new AuthResponseDto(user.Id , user.Role , token);
     }
-    
-    
+    #endregion
     
     private string GenerateToken(UserModel user)
     {

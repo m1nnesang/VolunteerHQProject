@@ -15,7 +15,7 @@ public class UserModel
     
     #endregion
     
-    public string? City { get; set; }
+    public string? City { get; set; } // change to API in the future 
     public string? AvatarPath { get; set; }
     
     public UserRoles Role { get; set; }
