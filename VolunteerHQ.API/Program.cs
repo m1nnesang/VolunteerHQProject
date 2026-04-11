@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using VolunteerHQ.Infrastructure.Data;
+using VolunteerHQ.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
@@ -25,10 +26,12 @@ builder.Services.AddAuthentication("Bearer").AddJwtBearer(options =>
 
     };
 });
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddOpenApi();
 
-var app = builder.Build();
+var app = builder.Build();  
 
 
 // Configure the HTTP request pipeline.
