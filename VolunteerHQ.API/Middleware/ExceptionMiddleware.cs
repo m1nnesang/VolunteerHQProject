@@ -1,0 +1,36 @@
+﻿using VolunteerHQ.Core.Exceptions;
+
+namespace VolunteerHQ.API.Middleware;
+
+public class ExceptionMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public ExceptionMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+
+        catch (Exception ex)
+        {
+            var statusCode = ex switch
+            {
+                UnauthorizedException => 401,
+                NotFoundException => 404,
+                ConflictEmailException => 409,
+                _ => 500
+            };
+
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(ex.Message);
+        }
+    }
+}

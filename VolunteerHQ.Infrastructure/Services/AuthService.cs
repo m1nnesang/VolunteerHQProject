@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using VolunteerHQ.Core.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using VolunteerHQ.Core.Exceptions;
 
 #endregion
 
@@ -30,7 +31,7 @@ public class AuthService
 
         if (emailExist != null)
         {
-            throw new Exception("Email is already exist");
+            throw new ConflictEmailException("Email is already in use");
         }
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
@@ -54,6 +55,26 @@ public class AuthService
 
     }
 
+    public async Task<AuthResponseDto> Login(LoginDto dto)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+        if (user == null)
+        {
+            throw new NotFoundException("User with this email is not found");
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        {
+            throw new UnauthorizedException("Invalid Password");
+        }
+        
+        var token = GenerateToken(user);
+
+        return new AuthResponseDto(user.Id , user.Role , token);
+    }
+    
+    
     
     private string GenerateToken(UserModel user)
     {
@@ -80,25 +101,5 @@ public class AuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-
-    public async Task<AuthResponseDto> Login(LoginDto dto)
-    {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-
-        if (user == null)
-        {
-            throw new Exception("User not find");
-        }
-
-        if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-        {
-            throw new Exception("Invalid password");
-        }
-        
-        var token = GenerateToken(user);
-
-        return new AuthResponseDto(user.Id , user.Role , token);
     }
 }

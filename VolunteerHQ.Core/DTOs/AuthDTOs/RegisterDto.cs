@@ -2,4 +2,4 @@
 
 namespace VolunteerHQ.Core.DTOs.AuthDTOs;
 
-public record RegisterDto (string Email , [MinLength(6)] string Password , string FirstName , string SecondName);
+public record RegisterDto ([EmailAddress] string Email , [MinLength(6)] string Password , string FirstName , string SecondName);
