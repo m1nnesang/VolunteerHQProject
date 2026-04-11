@@ -1,3 +1,5 @@
-﻿namespace VolunteerHQ.Core.DTOs.AuthDTOs;
+﻿using System.ComponentModel.DataAnnotations;
 
-public record LoginDto (string Email , string Password);
+namespace VolunteerHQ.Core.DTOs.AuthDTOs;
+
+public record LoginDto ([EmailAddress]string Email , string Password);
