@@ -7,7 +7,8 @@ namespace VolunteerHQ.Infrastructure.Data;
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
+    
+    #region DbSets
     public DbSet<UserModel> Users { get; set; }
     public DbSet<VolunteerProfileModel> VolunteerProfiles { get; set; }
     public DbSet<OrganizationModel> Organizations { get; set; }
@@ -24,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<NotificationModel> Notifications { get; set; }
     public DbSet<ReportModel> Reports { get; set; }
     public DbSet<AuditLogModel> AuditLogs { get; set; }
+    #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

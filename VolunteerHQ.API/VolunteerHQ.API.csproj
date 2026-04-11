@@ -17,10 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Controllers\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\VolunteerHQ.Core\VolunteerHQ.Core.csproj" />
       <ProjectReference Include="..\VolunteerHQ.Infrastructure\VolunteerHQ.Infrastructure.csproj" />
     </ItemGroup>
