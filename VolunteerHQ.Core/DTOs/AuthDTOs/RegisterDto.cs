@@ -14,5 +14,3 @@ public record RegisterDto
     DateOnly? BirthDate
     );
     
-    //Need to Add API for City;
-    

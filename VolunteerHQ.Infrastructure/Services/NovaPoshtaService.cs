@@ -8,15 +8,12 @@ public class NovaPoshtaService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
-
-
+    
     public NovaPoshtaService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _apiKey = configuration["NovaPoshta:ApiKey"]!;
     }
-    
-    
     
     public async Task<List<CityResponseDto>> GetCity()
     {
@@ -50,6 +47,4 @@ public class NovaPoshtaService
         public string? Description { get; set; }
         public string? Ref { get; set; }
     }
-    
-    
 }

@@ -1,3 +1,3 @@
 ﻿namespace VolunteerHQ.Core.DTOs.OrganizationDTOs;
 
-public record OrganizationResponseDto(int Id, string Name , string City , string Description , DateOnly CreatedAt);
+public record OrganizationResponseDto(int Id, string Name , string City , string Description , DateTime CreatedAt);

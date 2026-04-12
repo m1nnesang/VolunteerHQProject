@@ -1,5 +1,4 @@
-﻿#region using
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using VolunteerHQ.Core.DTOs.AuthDTOs;
 using VolunteerHQ.Infrastructure.Data;
 using System.Security.Claims;
@@ -10,8 +9,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using VolunteerHQ.Core.DTOs.UserDTOs;
 using VolunteerHQ.Core.Exceptions;
-
-#endregion
 
 namespace VolunteerHQ.Infrastructure.Services;
 

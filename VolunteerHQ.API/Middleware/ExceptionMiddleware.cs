@@ -25,6 +25,7 @@ public class ExceptionMiddleware
                 UnauthorizedException => 401,
                 NotFoundException => 404,
                 ConflictEmailException => 409,
+                NotEnoughRightsException => 403,
                 _ => 500
             };
 
