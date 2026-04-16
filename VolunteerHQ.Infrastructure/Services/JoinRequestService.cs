@@ -4,6 +4,7 @@ using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
 using VolunteerHQ.Core.Models;
 using VolunteerHQ.Infrastructure.Data;
+
  
 
 namespace VolunteerHQ.Infrastructure.Services;
@@ -11,16 +12,16 @@ namespace VolunteerHQ.Infrastructure.Services;
 public class JoinRequestService
 {
     private readonly AppDbContext _db;
-    private readonly MembershipValidatorService _vs;
+    private readonly ValidatorService _vs;
 
-    public JoinRequestService(AppDbContext db , MembershipValidatorService vs)
+    public JoinRequestService(AppDbContext db , ValidatorService vs)
     {
         _db = db;
         _vs = vs;
     }
     
     
-    public async Task<JoinRequestResponseDto> CreateJoinRequest(int userId, int orgId, CreateJoinRequestDto dto)
+    public async Task<JoinRequestResponseDto> CreateJoinRequest(int userId, int orgId, CreateJoinRequestDto dto, CancellationToken ct = default)
     {
         var request = new JoinRequestModel
         {
@@ -37,23 +38,32 @@ public class JoinRequestService
             ReviewedByUserId = null
         };
         
-        await _db.AddAsync(request);
-        await _db.SaveChangesAsync();
+        await _db.AddAsync(request, ct);
+        await _db.SaveChangesAsync(ct);
 
         return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, request.Status,
             request.CreatedAt , request.ReviewedAt , request.ReviewedByUserId );
     }
 
-    public async Task<JoinRequestResponseDto> GetJoinRequest(int requesterId , int orgId)
+    public async Task<JoinRequestResponseDto> GetJoinRequest(int joinRequestId , int userId , int orgId, CancellationToken ct = default)
     {
-        var requester = await _db.OrganizationMemberships.FirstOrDefaultAsync(r => r.UserId == requesterId);
+        // validators
+        await _vs.CanManageRequests(userId, orgId, ct);
+        var request = await _vs.GetRequestById(joinRequestId, ct);
+        
+        return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, 
+            request.Status, request.CreatedAt, request.ReviewedAt, request.ReviewedByUserId);
+    }
 
-        if (requester.MemberRole != OrganizationMemberRole.Leader &&
-            requester.MemberRole != OrganizationMemberRole.Deputy &&
-            requester.MemberRole != OrganizationMemberRole.Moderator)
-        {
-            throw new NotEnoughRightsException("You don't have enough rights for this operation");
-        }
+    public async Task<List<JoinRequestResponseDto>> GetAllJoinRequests(int orgId, CancellationToken ct = default)
+    {
+        var organization = await _vs.GetOrganizationOrThrow(orgId, ct);
+
+        return await _db.JoinRequests
+            .Where(r => r.OrganizationId == orgId)
+            .Select(r => new JoinRequestResponseDto(r.Id, r.UserId, r.OrganizationId,
+                r.Status, r.CreatedAt, r.ReviewedAt, r.ReviewedByUserId))
+            .ToListAsync(ct);
     }
 }
 

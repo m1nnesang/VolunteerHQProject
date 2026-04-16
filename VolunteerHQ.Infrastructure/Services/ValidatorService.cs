@@ -1,0 +1,57 @@
+﻿using Microsoft.EntityFrameworkCore;
+using VolunteerHQ.Core.DTOs.JoinRequestDTOs;
+using VolunteerHQ.Core.Enums;
+using VolunteerHQ.Core.Exceptions;
+using VolunteerHQ.Core.Models;
+using VolunteerHQ.Infrastructure.Data;
+
+
+namespace VolunteerHQ.Infrastructure.Services;
+
+
+public class ValidatorService 
+{
+    private readonly AppDbContext _db;
+
+    public ValidatorService(AppDbContext db)
+    {
+        _db = db;
+    }
+    
+    public async Task<OrganizationMembershipModel> GetUserOrThrow(int userId , int orgId, CancellationToken ct = default)
+    {
+        var user = await _db.OrganizationMemberships.FirstOrDefaultAsync(m => m.UserId == userId && m.OrganizationId == orgId, ct);
+
+        if (user == null) throw new NotFoundException("You are not member of this Organization");
+        return user;
+    }
+
+    public async Task<OrganizationModel> GetOrganizationOrThrow(int orgId, CancellationToken ct = default)
+    {
+        var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Id == orgId, ct);
+
+        if (org == null) throw new NotFoundException("Organization not found");
+        return org;
+    }
+
+    public async Task<JoinRequestModel> GetRequestById(int joinRequestId, CancellationToken ct = default)
+    {
+        var request = await _db.JoinRequests.FirstOrDefaultAsync(r => r.Id == joinRequestId, ct);
+
+        if (request == null) throw new NotFoundException("Join request with this id isn't found");
+
+        return request;
+    }
+
+    public async Task CanManageRequests(int userId, int orgId, CancellationToken ct = default)
+    {
+        var user = await GetUserOrThrow(userId, orgId, ct);
+        
+        if  (user.MemberRole != OrganizationMemberRole.Leader &&
+              user.MemberRole != OrganizationMemberRole.Deputy &&
+              user.MemberRole != OrganizationMemberRole.Moderator) 
+        {
+            throw new NotEnoughRightsException("You don't have enough rights for this operation");
+        }
+    }
+}
