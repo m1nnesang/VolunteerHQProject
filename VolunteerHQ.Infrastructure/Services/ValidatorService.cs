@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VolunteerHQ.Core.DTOs.JoinRequestDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
 using VolunteerHQ.Core.Models;
@@ -34,7 +33,7 @@ public class ValidatorService
         return org;
     }
 
-    public async Task<JoinRequestModel> GetRequestById(int joinRequestId, CancellationToken ct = default)
+    public async Task<JoinRequestModel> GetRequest(int joinRequestId, CancellationToken ct = default)
     {
         var request = await _db.JoinRequests.FirstOrDefaultAsync(r => r.Id == joinRequestId, ct);
 

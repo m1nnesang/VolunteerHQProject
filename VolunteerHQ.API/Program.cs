@@ -71,7 +71,7 @@ builder.Services.AddSwaggerGen(options =>
 #region Scoped
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<MembershipValidatorService>();
+builder.Services.AddScoped<ValidatorService>();
 #endregion
 
 #region app

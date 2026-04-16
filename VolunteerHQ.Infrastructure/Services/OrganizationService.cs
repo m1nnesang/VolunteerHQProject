@@ -83,6 +83,7 @@ public class OrganizationService
 
     public async Task UpdateMemberRole(int orgId, int requesterId, int targetId , UpdateMemberRoleDto dto, CancellationToken ct = default)
     {
+        
         var requester = await _vs.GetUserOrThrow(requesterId, orgId, ct);
 
         if (requester.MemberRole != OrganizationMemberRole.Leader)
