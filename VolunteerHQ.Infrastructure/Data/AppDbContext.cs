@@ -39,6 +39,10 @@ public class AppDbContext : DbContext
             .HasIndex(m => m.Login)
             .IsUnique();
 
+        modelBuilder.Entity<OrganizationMembershipModel>()
+            .HasIndex(m => new { m.UserId, m.OrganizationId })
+            .IsUnique();
+
         #region FundraiserAssignmentModel
         modelBuilder.Entity<FundraiserAssignmentModel>()
             .HasIndex(f => f.UniqueCode)
