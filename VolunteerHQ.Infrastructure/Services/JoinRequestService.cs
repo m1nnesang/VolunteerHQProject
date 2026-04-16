@@ -87,6 +87,10 @@ public class JoinRequestService
                MemberRole = OrganizationMemberRole.Member,
                JoinedAt = DateTime.UtcNow
            };
+           
+           var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId.Value, ct);
+
+           user!.Role = UserRoles.Volunteer;
 
            await _db.AddAsync(member, ct);
        }

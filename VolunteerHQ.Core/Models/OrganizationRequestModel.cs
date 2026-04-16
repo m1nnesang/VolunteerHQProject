@@ -10,8 +10,6 @@ public class OrganizationRequestModel
     public UserModel? User { get; set; }
     
     #region FieldsAboutUser
-    public required string FirstName { get; set; }
-    public required string SecondName { get; set; }
     public required string Bio { get; set; }
     public required string Experience { get; set; }
     public required string Skills { get; set; }
@@ -29,6 +27,7 @@ public class OrganizationRequestModel
     
     public DateTime CreatedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public int? ReviewedByUserId { get; set; }
     
     public string? AdminComment { get; set; }
 }

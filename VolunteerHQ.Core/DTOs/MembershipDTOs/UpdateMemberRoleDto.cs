@@ -2,4 +2,4 @@
 
 namespace VolunteerHQ.Core.DTOs.MembershipDTOs;
 
-public record UpdateMemberRoleDto(int UserId, OrganizationMemberRole newRole);
+public record UpdateMemberRoleDto(OrganizationMemberRole newRole);

@@ -38,6 +38,12 @@ public class OrganizationService
             MemberRole = OrganizationMemberRole.Leader,
             JoinedAt = DateTime.UtcNow
         };
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+        if (user == null) throw new NotFoundException("user not found");
+        
+        user.Role = UserRoles.Volunteer;
         
         organization.Memberships.Add(membership);
 
