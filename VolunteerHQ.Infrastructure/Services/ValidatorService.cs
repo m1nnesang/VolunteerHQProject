@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using VolunteerHQ.Core.DTOs.OrganizationRequestDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
 using VolunteerHQ.Core.Models;
@@ -17,7 +18,7 @@ public class ValidatorService
         _db = db;
     }
     
-    public async Task<OrganizationMembershipModel> GetUserOrThrow(int userId , int orgId, CancellationToken ct = default)
+    public async Task<OrganizationMembershipModel> GetUserInOrganizationOrThrow(int userId , int orgId, CancellationToken ct = default)
     {
         var user = await _db.OrganizationMemberships.FirstOrDefaultAsync(m => m.UserId == userId && m.OrganizationId == orgId, ct);
 
@@ -33,18 +34,18 @@ public class ValidatorService
         return org;
     }
 
-    public async Task<JoinRequestModel> GetRequest(int joinRequestId, CancellationToken ct = default)
+    public async Task<JoinRequestModel> GetRequestOrThrow(int joinRequestId, CancellationToken ct = default)
     {
         var request = await _db.JoinRequests.FirstOrDefaultAsync(r => r.Id == joinRequestId, ct);
 
-        if (request == null) throw new NotFoundException("Join request with this id isn't found");
+        if (request == null) throw new NotFoundException("Request with this id isn't found");
 
         return request;
     }
 
-    public async Task CanManageRequests(int userId, int orgId, CancellationToken ct = default)
+    public async Task CanManageRequestsToOrg(int userId, int orgId, CancellationToken ct = default) // validation ONLY FOR APPROVE VOLUNTEER
     {
-        var user = await GetUserOrThrow(userId, orgId, ct);
+        var user = await GetUserInOrganizationOrThrow(userId, orgId, ct);
         
         if  (user.MemberRole != OrganizationMemberRole.Leader &&
               user.MemberRole != OrganizationMemberRole.Deputy &&
@@ -53,4 +54,30 @@ public class ValidatorService
             throw new NotEnoughRightsException("You don't have enough rights for this operation");
         }
     }
+    
+    public async Task<OrganizationRequestModel> GetOrgRequestOrThrow(int createRequestId, CancellationToken ct = default)
+    {
+        var createRequest = await _db.OrganizationRequests.FirstOrDefaultAsync(r => r.Id == createRequestId, ct);
+
+        if (createRequest == null) throw new NotFoundException("Request with this id isn't found");
+
+        return createRequest;
+    }
+    
+    
+    public async Task<UserModel> GetUserByIdOrThrow(int userId, CancellationToken ct = default)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user == null) throw new NotFoundException("User not found");
+        return user;
+    }
+    
+    public async Task AdminOrThrow(int userId, CancellationToken ct = default)
+    {
+        var user = await GetUserByIdOrThrow(userId, ct);
+        if (user.Role != UserRoles.Admin)
+            throw new NotEnoughRightsException("You don't have enough rights for this operation");
+    }
+    
+    
 }

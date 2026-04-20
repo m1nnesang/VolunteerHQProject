@@ -8,20 +8,18 @@ namespace VolunteerHQ.Infrastructure.Services;
 public class UserService
 {
     private readonly AppDbContext _db;
+    private readonly ValidatorService _vs; // validation service!
+    
 
-    public UserService(AppDbContext db)
+    public UserService(AppDbContext db , ValidatorService vs)
     {
         _db = db;
+        _vs = vs;
     }
 
-public async Task<UserResponseDto> GetMe(int userId)
+    public async Task<UserResponseDto> GetMe(int userId, CancellationToken ct = default)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
-        
-        if (user == null)
-        {
-            throw new NotFoundException("User with this id is not found");
-        }
+        var user = await _vs.GetUserByIdOrThrow(userId, ct);
 
         return new UserResponseDto(user.Id, user.Email, user.FirstName, user.SecondName, user.BirthDate, user.Role);
     }

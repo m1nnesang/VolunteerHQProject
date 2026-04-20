@@ -19,7 +19,6 @@ public class OrganizationRequestModel
     #region FieldsAboutOrg
     public required string ProposedName { get; set; }
     public required string City { get; set; }
-    public required string Purpose { get; set; }
     public required string Description { get; set; }
     #endregion
     

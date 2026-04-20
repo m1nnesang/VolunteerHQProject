@@ -48,8 +48,8 @@ public class JoinRequestService
     public async Task<JoinRequestResponseDto> GetJoinRequest(int joinRequestId , int userId , int orgId, CancellationToken ct = default)
     {
         // validators
-        await _vs.CanManageRequests(userId, orgId, ct);
-        var request = await _vs.GetRequest(joinRequestId, ct);
+        await _vs.CanManageRequestsToOrg(userId, orgId, ct);
+        var request = await _vs.GetRequestOrThrow(joinRequestId, ct);
         
         return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, 
             request.Status, request.CreatedAt, request.ReviewedAt, request.ReviewedByUserId);
@@ -68,9 +68,9 @@ public class JoinRequestService
 
     public async Task<JoinRequestResponseDto> ReviewJoinRequest( ReviewJoinRequestDto dto, int reviewerId, int orgId , int requestId , CancellationToken ct = default)
     {
-       await _vs.CanManageRequests(reviewerId, orgId, ct);
+       await _vs.CanManageRequestsToOrg(reviewerId, orgId, ct);
 
-       var request = await _vs.GetRequest(requestId, ct);
+       var request = await _vs.GetRequestOrThrow(requestId, ct);
 
        request.Status = dto.Status;
        request.ReviewedAt = DateTime.UtcNow;
@@ -78,21 +78,22 @@ public class JoinRequestService
 
        if (dto.Status == RequestStatus.Approved)
        {
-           if (request.UserId == null) throw new NotFoundException ("User not found");
+           
+           if (request.UserId == null) throw new NotFoundException("User not found");
 
            var member = new OrganizationMembershipModel
            {
                UserId = request.UserId.Value,
-               OrganizationId = orgId,
                MemberRole = OrganizationMemberRole.Member,
                JoinedAt = DateTime.UtcNow
            };
            
-           var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId.Value, ct);
+           var user = await _vs.GetUserByIdOrThrow(request.UserId.Value, ct);
+           
+           user.Role = UserRoles.Volunteer;
 
-           user!.Role = UserRoles.Volunteer;
-
-           await _db.AddAsync(member, ct);
+           var organization = await _vs.GetOrganizationOrThrow(orgId, ct); 
+           organization.Memberships.Add(member);
        }
 
        await _db.SaveChangesAsync(ct);

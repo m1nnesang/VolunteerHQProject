@@ -31,7 +31,8 @@ public class ExceptionMiddleware
 
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(ex.Message);
+            var response = new { error = ex.Message };
+            await context.Response.WriteAsJsonAsync(response);
         }
     }
 }

@@ -74,6 +74,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ValidatorService>();
 builder.Services.AddScoped<OrganizationService>();
 builder.Services.AddScoped <JoinRequestService>();
+builder.Services.AddScoped <OrganizationRequestService>();
 #endregion
 
 #region app

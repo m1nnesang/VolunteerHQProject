@@ -9,7 +9,7 @@ namespace VolunteerHQ.API.Controllers;
 
 
 [ApiController]
-[Route("/api/[controller]")]
+[Route("api/[controller]")]
 public class OrganizationController : ControllerBase
 {
     private readonly OrganizationService _orgService;
@@ -18,22 +18,11 @@ public class OrganizationController : ControllerBase
     {
         _orgService = orgService;
     }
-
-    [Authorize]
-    [HttpPost]
-    public async Task<IActionResult> CreateOrganization([FromBody] CreateOrganizationDto dto, CancellationToken ct)
-    {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
-        var create = await _orgService.CreateOrganization(dto , userId, ct);
-
-        return Ok(create);
-    }
-
-    [HttpGet("{orgId}")] 
+    
+    [HttpGet("{orgId}")]
     public async Task<IActionResult> GetOrganization(int orgId, CancellationToken ct = default)
     {
         var org = await _orgService.GetOrganization(orgId, ct);
-
         return Ok(org);
     }
 
@@ -41,13 +30,11 @@ public class OrganizationController : ControllerBase
     public async Task<IActionResult> GetMembers(int orgId, CancellationToken ct = default)
     {
         var members = await _orgService.GetOrganizationMembers(orgId, ct);
-
         return Ok(members);
     }
 
-
     [Authorize]
-    [HttpDelete]
+    [HttpDelete("{orgId}/members/{targetId}")]
     public async Task<IActionResult> RemoveMember(int orgId, int targetId, CancellationToken ct = default)
     {
         var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
@@ -57,7 +44,7 @@ public class OrganizationController : ControllerBase
     }
 
     [Authorize]
-    [HttpPut]
+    [HttpPut("{orgId}/members/role")]
     public async Task<IActionResult> UpdateMember(int orgId, int targetId, [FromBody] UpdateMemberRoleDto dto,CancellationToken ct = default)
     {
         var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
