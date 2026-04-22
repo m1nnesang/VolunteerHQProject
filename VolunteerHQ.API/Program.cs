@@ -5,7 +5,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using VolunteerHQ.API.Middleware;
 using VolunteerHQ.Infrastructure.Data;
-using VolunteerHQ.Infrastructure.Services;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using VolunteerHQ.API.Validators;
 using VolunteerHQ.Infrastructure.Services.Classes;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -38,6 +40,9 @@ builder.Services.AddHttpClient<NovaPoshtaService>();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
+builder.Services.AddFluentValidationAutoValidation();
 #endregion
 
 #region Swagger

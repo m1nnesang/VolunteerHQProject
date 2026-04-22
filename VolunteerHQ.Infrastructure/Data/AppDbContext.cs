@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<NotificationModel> Notifications { get; set; }
     public DbSet<ReportModel> Reports { get; set; }
     public DbSet<AuditLogModel> AuditLogs { get; set; }
+    public DbSet<RefreshTokenModel> RefreshToken { get; set; }
     #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

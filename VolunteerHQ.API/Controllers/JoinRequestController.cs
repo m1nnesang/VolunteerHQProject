@@ -39,9 +39,9 @@ public class JoinRequestController : ControllerBase
 
     [Authorize]
     [HttpGet("org/{orgId}")]
-    public async Task<IActionResult> GetAll(int orgId, CancellationToken ct = default)
+    public async Task<IActionResult> GetAll(int orgId, int page = 1, int pageSize = 20 , CancellationToken ct = default)
     {
-        var result = await _service.GetAllJoinRequests(orgId, ct);
+        var result = await _service.GetAllJoinRequests(orgId, page, pageSize, ct);
 
         return Ok(result);
     }

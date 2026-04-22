@@ -8,7 +8,7 @@ namespace VolunteerHQ.API.Controllers;
 
 
 [ApiController]
-[Route("/api/[controller]")]
+[Route("api/[controller]")]
 public class OrganizationRequestController : ControllerBase
 {
     
@@ -40,10 +40,10 @@ public class OrganizationRequestController : ControllerBase
 
     [Authorize]
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllRequests(CancellationToken ct = default)
+    public async Task<IActionResult> GetAllRequests(int page = 1 , int pageSize = 20 ,CancellationToken ct = default)
     {
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
-        var result = await _orgReqService.GetAllRequests(userId, ct);
+        var result = await _orgReqService.GetAllRequests(userId, page, pageSize, ct);
 
         return Ok(result);
     }

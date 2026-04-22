@@ -16,7 +16,6 @@ public class JoinRequestModel
     public required string Bio { get; set; }
     public required string Skills { get; set; }
     public required string CvFilePath { get; set; }
-    public required string Motivation { get; set; }
     
     public required string Experience { get; set; }
     #endregion

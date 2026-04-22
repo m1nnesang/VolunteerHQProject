@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using VolunteerHQ.Core.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using VolunteerHQ.Core.Exceptions;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -16,11 +17,13 @@ namespace VolunteerHQ.Infrastructure.Services.Classes;
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _db;
+    private readonly ValidatorService _vs;
     private readonly IConfiguration _configuration;
 
-    public  AuthService(AppDbContext db, IConfiguration iConfiguration)
+    public  AuthService(AppDbContext db,ValidatorService vs ,  IConfiguration iConfiguration)
     {
         _db = db;
+        _vs = vs;
         _configuration = iConfiguration;
     }
     
@@ -52,8 +55,11 @@ public class AuthService : IAuthService
         await _db.SaveChangesAsync();
 
         var token = GenerateToken(user);
+        var refreshToken = await CreateRefreshToken(user.Id);
+       
+        await _db.SaveChangesAsync();
         
-        return new AuthResponseDto(user.Id, user.Role, token);
+        return new AuthResponseDto(user.Id, user.Role, token , refreshToken);
     }
 
     public async Task<AuthResponseDto> Login(LoginDto dto)
@@ -71,9 +77,36 @@ public class AuthService : IAuthService
         }
         
         var token = GenerateToken(user);
+        var refreshToken = await CreateRefreshToken(user.Id);
+        
+        await _db.SaveChangesAsync();
 
-        return new AuthResponseDto(user.Id , user.Role , token);
+        return new AuthResponseDto(user.Id , user.Role , token , refreshToken);
     }
+
+    public async Task<AuthResponseDto> Refresh(string refreshToken)
+    {
+        var token = await _vs.GetRefreshTokenOrThrow(refreshToken);
+
+        if (token.IsRevoked)
+            throw new UnauthorizedException("Refresh token has been revoked");
+
+        if (token.ExpiresAt < DateTime.UtcNow)
+            throw new UnauthorizedException("Refresh token has expired");
+
+        token.IsRevoked = true;
+
+        var user = await _vs.GetUserByIdOrThrow(token.UserId);
+        var accessToken = GenerateToken(user);
+        var newRefreshToken = await CreateRefreshToken(token.UserId);
+
+        await _db.SaveChangesAsync();
+
+        return new AuthResponseDto(user.Id, user.Role, accessToken, newRefreshToken);
+    }
+    
+    
+    
     #endregion
     
     private string GenerateToken(UserModel user)
@@ -101,5 +134,29 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+    
+    private string GenerateRefreshToken()
+    {
+        var bytes = new byte[64];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToBase64String(bytes);
+    }
+    
+    private async Task<string> CreateRefreshToken(int userId)
+    {
+        var token = GenerateRefreshToken();
+    
+        var model = new RefreshTokenModel
+        {
+            Token = token,
+            UserId = userId,
+            ExpiresAt = DateTime.UtcNow.AddDays(30),
+            IsRevoked = false,
+            CreatedAt = DateTime.UtcNow
+        };
+    
+        await _db.AddAsync(model);
+        return token;
     }
 }

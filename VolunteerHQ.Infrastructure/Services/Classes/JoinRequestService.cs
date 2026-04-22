@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.JoinRequestDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
@@ -32,7 +33,6 @@ public class JoinRequestService : IJoinRequestService
             Skills = dto.Skills,
             Experience = dto.Experience,
             CvFilePath = dto.CvFilePath,
-            Motivation = dto.Motivation,
             CreatedAt = DateTime.UtcNow,
             ReviewedAt = null,
             ReviewedByUserId = null
@@ -55,15 +55,18 @@ public class JoinRequestService : IJoinRequestService
             request.Status, request.CreatedAt, request.ReviewedAt, request.ReviewedByUserId);
     }
 
-    public async Task<List<JoinRequestResponseDto>> GetAllJoinRequests(int orgId, CancellationToken ct = default)
+    public async Task<PagedResponseDto<JoinRequestResponseDto>> GetAllJoinRequests(int orgId, int page = 1, int pageSize = 20, CancellationToken ct = default)
     {
-        var organization = await _vs.GetOrganizationOrThrow(orgId, ct);
+        var total = await _db.JoinRequests.CountAsync(r => r.OrganizationId == orgId, ct);
 
-        return await _db.JoinRequests
+        var items = await _db.JoinRequests
             .Where(r => r.OrganizationId == orgId)
-            .Select(r => new JoinRequestResponseDto(r.Id, r.UserId, r.OrganizationId,
-                r.Status, r.CreatedAt, r.ReviewedAt, r.ReviewedByUserId))
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new JoinRequestResponseDto(r.Id, r.UserId, r.OrganizationId, r.Status, r.CreatedAt, r.ReviewedAt, r.ReviewedByUserId))
             .ToListAsync(ct);
+
+        return new PagedResponseDto<JoinRequestResponseDto>(items, total, page, pageSize);
     }
 
     public async Task<JoinRequestResponseDto> ReviewJoinRequest( ReviewJoinRequestDto dto, int reviewerId, int orgId , int requestId , CancellationToken ct = default)

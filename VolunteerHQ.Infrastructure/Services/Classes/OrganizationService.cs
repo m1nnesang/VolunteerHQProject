@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.MembershipDTOs;
 using VolunteerHQ.Core.DTOs.OrganizationDTOs;
 using VolunteerHQ.Core.Enums;
@@ -26,14 +27,18 @@ public class OrganizationService : IOrganizationService
         return new OrganizationResponseDto(organization.Id, organization.OrganizationName, organization.City, organization.Description, organization.CreatedAt);
     }
 
-    public async Task<List<MembershipResponseDto>> GetOrganizationMembers(int orgId, CancellationToken ct = default)
+    public async Task<PagedResponseDto<MembershipResponseDto>> GetOrganizationMembers(int orgId, int page = 1, int pageSize = 20, CancellationToken ct = default)
     {
-        var organization = await _vs.GetOrganizationOrThrow(orgId, ct);
+        var total = await _db.OrganizationMemberships.CountAsync(m => m.OrganizationId == orgId, ct);
 
-        return await _db.OrganizationMemberships
+        var items = await _db.OrganizationMemberships
             .Where(m => m.OrganizationId == orgId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(m => new MembershipResponseDto(m.Id, m.OrganizationId, m.MemberRole, m.JoinedAt))
             .ToListAsync(ct);
+
+        return new PagedResponseDto<MembershipResponseDto>(items, total, page, pageSize);
     }
 
     public async Task RemoveMember(int orgId, int requesterId , int targetId, CancellationToken ct = default)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.OrganizationRequestDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
@@ -62,16 +63,19 @@ public class OrganizationRequestService : IOrganizationRequestService
             request.ReviewedByUserId, request.AdminComment);
     }
 
-    public async Task<List<OrganizationRequestResponseDto>> GetAllRequests(int userId, CancellationToken ct = default)
+    public async Task<PagedResponseDto<OrganizationRequestResponseDto>> GetAllRequests(int userId, int page = 1, int pageSize = 20 ,  CancellationToken ct = default)
     {
         await _vs.AdminOrThrow(userId, ct);
 
-        return await _db.OrganizationRequests
-            .Select(o => new OrganizationRequestResponseDto(o.Id, o.UserId, o.Bio, o.Experience,
-                o.Skills, o.CvFilePath, o.ProposedName, o.City,
-                o.Description, o.Status, o.CreatedAt,
-                o.ReviewedByUserId, o.AdminComment))
+        var total = await _db.OrganizationRequests.CountAsync(ct);
+        
+        var items = await _db.OrganizationRequests
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new OrganizationRequestResponseDto (r.Id , r.UserId , r.Bio , r.Experience , r.Skills, r.CvFilePath, r.ProposedName, r.City , r.Description, r.Status, r.ReviewedAt, r.ReviewedByUserId, r.AdminComment ))
             .ToListAsync(ct);
+
+        return new PagedResponseDto<OrganizationRequestResponseDto>(items, total, page, pageSize);
     }
 
     public async Task<OrganizationRequestResponseDto> ReviewOrganizationRequest(int userId, int requestId,

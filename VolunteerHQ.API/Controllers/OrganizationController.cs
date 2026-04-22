@@ -26,9 +26,9 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpGet("{orgId}/members")]
-    public async Task<IActionResult> GetMembers(int orgId, CancellationToken ct = default)
+    public async Task<IActionResult> GetMembers(int orgId, int page = 1 , int pageSize = 20,  CancellationToken ct = default)
     {
-        var members = await _orgService.GetOrganizationMembers(orgId, ct);
+        var members = await _orgService.GetOrganizationMembers(orgId, page , pageSize , ct);
         return Ok(members);
     }
 
@@ -49,7 +49,7 @@ public class OrganizationController : ControllerBase
         var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
         await _orgService.UpdateMemberRole(orgId, requesterId, targetId, dto,  ct);
 
-        return Ok();
+        return NoContent();
     }
 }
 

@@ -1,3 +1,3 @@
 ﻿namespace VolunteerHQ.Core.DTOs.JoinRequestDTOs;
 
-public record CreateJoinRequestDto(string Bio , string Skills , string Experience , string CvFilePath , string Motivation);
+public record CreateJoinRequestDto(string Bio , string Skills , string Experience , string CvFilePath);
