@@ -1,12 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VolunteerHQ.Core.DTOs.OrganizationRequestDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
 using VolunteerHQ.Core.Models;
 using VolunteerHQ.Infrastructure.Data;
 
 
-namespace VolunteerHQ.Infrastructure.Services;
+namespace VolunteerHQ.Infrastructure.Services.Classes;
 
 
 public class ValidatorService 

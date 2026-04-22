@@ -4,10 +4,11 @@ using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
 using VolunteerHQ.Core.Models;
 using VolunteerHQ.Infrastructure.Data;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
-namespace VolunteerHQ.Infrastructure.Services;
+namespace VolunteerHQ.Infrastructure.Services.Classes;
 
-public class OrganizationRequestService
+public class OrganizationRequestService : IOrganizationRequestService
 {
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs; // validation service!

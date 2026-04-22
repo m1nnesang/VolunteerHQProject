@@ -1,11 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using VolunteerHQ.Core.DTOs.UserDTOs;
-using VolunteerHQ.Core.Exceptions;
+﻿using VolunteerHQ.Core.DTOs.UserDTOs;
 using VolunteerHQ.Infrastructure.Data;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
-namespace VolunteerHQ.Infrastructure.Services;
+namespace VolunteerHQ.Infrastructure.Services.Classes;
 
-public class UserService
+public class UserService : IUserService
 {
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs; // validation service!

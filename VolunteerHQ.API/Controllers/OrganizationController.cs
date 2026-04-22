@@ -2,8 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.MembershipDTOs;
-using VolunteerHQ.Core.DTOs.OrganizationDTOs;
-using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
 namespace VolunteerHQ.API.Controllers;
 
@@ -12,9 +11,9 @@ namespace VolunteerHQ.API.Controllers;
 [Route("api/[controller]")]
 public class OrganizationController : ControllerBase
 {
-    private readonly OrganizationService _orgService;
+    private readonly IOrganizationService _orgService;
 
-    public OrganizationController(OrganizationService orgService)
+    public OrganizationController(IOrganizationService orgService)
     {
         _orgService = orgService;
     }
@@ -40,11 +39,11 @@ public class OrganizationController : ControllerBase
         var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
         await _orgService.RemoveMember(orgId, requesterId, targetId, ct);
 
-        return Ok();
+        return NoContent();
     }
 
     [Authorize]
-    [HttpPut("{orgId}/members/role")]
+    [HttpPut("{orgId}/members/{targetId}/role")]
     public async Task<IActionResult> UpdateMember(int orgId, int targetId, [FromBody] UpdateMemberRoleDto dto,CancellationToken ct = default)
     {
         var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);

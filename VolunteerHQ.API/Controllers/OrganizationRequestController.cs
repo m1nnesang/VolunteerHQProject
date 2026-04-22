@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.OrganizationRequestDTOs;
-using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
 namespace VolunteerHQ.API.Controllers;
 
@@ -12,9 +12,9 @@ namespace VolunteerHQ.API.Controllers;
 public class OrganizationRequestController : ControllerBase
 {
     
-    private readonly OrganizationRequestService _orgReqService;
+    private readonly IOrganizationRequestService _orgReqService;
 
-    public OrganizationRequestController(OrganizationRequestService orgReqService)
+    public OrganizationRequestController(IOrganizationRequestService orgReqService)
     {
         _orgReqService = orgReqService;
     }

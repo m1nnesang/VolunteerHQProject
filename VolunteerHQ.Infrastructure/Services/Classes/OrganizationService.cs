@@ -4,10 +4,11 @@ using VolunteerHQ.Core.DTOs.OrganizationDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Infrastructure.Data;
 using VolunteerHQ.Core.Exceptions;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
-namespace VolunteerHQ.Infrastructure.Services;
+namespace VolunteerHQ.Infrastructure.Services.Classes;
 
-public class OrganizationService
+public class OrganizationService : IOrganizationService
 {
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs;

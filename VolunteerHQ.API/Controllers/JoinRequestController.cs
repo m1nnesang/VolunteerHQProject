@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.JoinRequestDTOs;
-using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
 namespace VolunteerHQ.API.Controllers;
 
@@ -10,9 +10,9 @@ namespace VolunteerHQ.API.Controllers;
 [Route("api/[controller]")]
 public class JoinRequestController : ControllerBase
 {
-    private readonly JoinRequestService _service;
+    private readonly IJoinRequestService _service;
 
-    public JoinRequestController(JoinRequestService service)
+    public JoinRequestController(IJoinRequestService service)
     {
         _service = service;
     }
@@ -48,7 +48,7 @@ public class JoinRequestController : ControllerBase
 
     [Authorize]
     [HttpPut("{requestId}/review/{orgId}")]
-    public async Task<IActionResult> Review(int requestId, int orgId, [FromBody] ReviewJoinRequestDto dto, int userId, CancellationToken ct = default)
+    public async Task<IActionResult> Review(int requestId, int orgId, [FromBody] ReviewJoinRequestDto dto, CancellationToken ct = default)
     {
         var reviewerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
         var result = await _service.ReviewJoinRequest(dto, reviewerId, orgId, requestId , ct);

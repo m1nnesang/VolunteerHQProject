@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Classes;
 
 namespace VolunteerHQ.API.Controllers;
 

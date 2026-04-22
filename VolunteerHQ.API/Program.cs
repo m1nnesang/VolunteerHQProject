@@ -6,6 +6,8 @@ using Microsoft.OpenApi.Models;
 using VolunteerHQ.API.Middleware;
 using VolunteerHQ.Infrastructure.Data;
 using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Classes;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
 #region build
 var builder = WebApplication.CreateBuilder(args);
@@ -69,14 +71,14 @@ builder.Services.AddSwaggerGen(options =>
 #endregion
 
 #region Scoped
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ValidatorService>();
-builder.Services.AddScoped<OrganizationService>();
-builder.Services.AddScoped <JoinRequestService>();
-builder.Services.AddScoped <OrganizationRequestService>();
+builder.Services.AddScoped< IOrganizationService, OrganizationService>();
+builder.Services.AddScoped <IJoinRequestService , JoinRequestService>();
+builder.Services.AddScoped <IOrganizationRequestService, OrganizationRequestService>();
 #endregion
-
+ 
 #region app
 var app = builder.Build();
 

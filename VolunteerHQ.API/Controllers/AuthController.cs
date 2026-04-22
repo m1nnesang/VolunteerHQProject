@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.AuthDTOs;
-using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
+
 
 namespace VolunteerHQ.API.Controllers;
 
@@ -8,9 +9,9 @@ namespace VolunteerHQ.API.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public AuthController(AuthService authService)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
     }

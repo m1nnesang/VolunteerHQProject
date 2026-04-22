@@ -1,8 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using VolunteerHQ.Core.DTOs.UserDTOs;
-using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
 namespace VolunteerHQ.API.Controllers;
 
@@ -10,9 +9,9 @@ namespace VolunteerHQ.API.Controllers;
 [Route("/api[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly UserService _userService;
+    private readonly IUserService _userService;
 
-    public UserController(UserService userService)
+    public UserController(IUserService userService)
     {
         _userService = userService;
     }

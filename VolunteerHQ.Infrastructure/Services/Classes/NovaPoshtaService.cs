@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using VolunteerHQ.Core.DTOs.NovaPoshtaDTOs;
 
-namespace VolunteerHQ.Infrastructure.Services;
+namespace VolunteerHQ.Infrastructure.Services.Classes;
 
 public class NovaPoshtaService
 {

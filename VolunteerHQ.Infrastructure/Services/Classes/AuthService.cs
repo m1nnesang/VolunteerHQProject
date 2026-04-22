@@ -7,12 +7,13 @@ using Microsoft.Extensions.Configuration;
 using VolunteerHQ.Core.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using VolunteerHQ.Core.DTOs.UserDTOs;
 using VolunteerHQ.Core.Exceptions;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
-namespace VolunteerHQ.Infrastructure.Services;
 
-public class AuthService
+namespace VolunteerHQ.Infrastructure.Services.Classes;
+
+public class AuthService : IAuthService
 {
     private readonly AppDbContext _db;
     private readonly IConfiguration _configuration;
