@@ -29,9 +29,9 @@ public class AuthService : IAuthService
     
     
     #region AuthResponseDto
-    public async Task<AuthResponseDto> Register(RegisterDto dto)
+    public async Task<AuthResponseDto> Register(RegisterDto dto , CancellationToken ct = default)
     {
-        var emailExist = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email); //email check
+        var emailExist = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email , ct); //email check
 
         if (emailExist != null)
         {
@@ -51,20 +51,20 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow,
         };
 
-        await _db.AddAsync(user);
-        await _db.SaveChangesAsync();
+        await _db.AddAsync(user , ct);
+        await _db.SaveChangesAsync(ct);
 
         var token = GenerateToken(user);
         var refreshToken = await CreateRefreshToken(user.Id);
        
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         
         return new AuthResponseDto(user.Id, user.Role, token , refreshToken);
     }
 
-    public async Task<AuthResponseDto> Login(LoginDto dto)
+    public async Task<AuthResponseDto> Login(LoginDto dto , CancellationToken ct = default)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email , ct);
 
         if (user == null)
         {
@@ -79,12 +79,12 @@ public class AuthService : IAuthService
         var token = GenerateToken(user);
         var refreshToken = await CreateRefreshToken(user.Id);
         
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return new AuthResponseDto(user.Id , user.Role , token , refreshToken);
     }
 
-    public async Task<AuthResponseDto> Refresh(string refreshToken)
+    public async Task<AuthResponseDto> Refresh(string refreshToken , CancellationToken ct = default)
     {
         var token = await _vs.GetRefreshTokenOrThrow(refreshToken);
 
@@ -96,11 +96,11 @@ public class AuthService : IAuthService
 
         token.IsRevoked = true;
 
-        var user = await _vs.GetUserByIdOrThrow(token.UserId);
+        var user = await _vs.GetUserByIdOrThrow(token.UserId , ct);
         var accessToken = GenerateToken(user);
         var newRefreshToken = await CreateRefreshToken(token.UserId);
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return new AuthResponseDto(user.Id, user.Role, accessToken, newRefreshToken);
     }

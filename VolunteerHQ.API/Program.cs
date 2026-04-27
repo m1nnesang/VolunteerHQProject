@@ -82,6 +82,7 @@ builder.Services.AddScoped<ValidatorService>();
 builder.Services.AddScoped< IOrganizationService, OrganizationService>();
 builder.Services.AddScoped <IJoinRequestService , JoinRequestService>();
 builder.Services.AddScoped <IOrganizationRequestService, OrganizationRequestService>();
+builder.Services.AddScoped<IMilitaryUnitService , MilitaryUnitService>();
 #endregion
  
 #region app
