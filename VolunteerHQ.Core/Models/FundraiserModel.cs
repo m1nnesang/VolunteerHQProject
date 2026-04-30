@@ -17,6 +17,8 @@ public class FundraiserModel
     public  decimal TotalGoal { get; set; }
     public decimal CurrentProgress { get; set; }
     
+    public ICollection<FundraiserAssignmentModel> Assignments { get; set; } = new List<FundraiserAssignmentModel>();
+    
     public FundraiserImportance Importance { get; set; }
     
     public DateOnly Deadline { get; set; }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VolunteerHQ.Infrastructure.Data;
@@ -11,9 +12,11 @@ using VolunteerHQ.Infrastructure.Data;
 namespace VolunteerHQ.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260430144439_Phase6_Fundraiser")]
+    partial class Phase6_Fundraiser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,7 +106,7 @@ namespace VolunteerHQ.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("FundraiserAssignmentId")
+                    b.Property<int>("FundraiserAssignmentId")
                         .HasColumnType("integer");
 
                     b.Property<int>("FundraiserId")
@@ -708,7 +711,9 @@ namespace VolunteerHQ.Infrastructure.Migrations
                 {
                     b.HasOne("VolunteerHQ.Core.Models.FundraiserAssignmentModel", "FundraiserAssignment")
                         .WithMany()
-                        .HasForeignKey("FundraiserAssignmentId");
+                        .HasForeignKey("FundraiserAssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("VolunteerHQ.Core.Models.FundraiserModel", "Fundraiser")
                         .WithMany()

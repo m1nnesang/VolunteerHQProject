@@ -79,10 +79,11 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ValidatorService>();
-builder.Services.AddScoped< IOrganizationService, OrganizationService>();
-builder.Services.AddScoped <IJoinRequestService , JoinRequestService>();
-builder.Services.AddScoped <IOrganizationRequestService, OrganizationRequestService>();
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+builder.Services.AddScoped<IJoinRequestService , JoinRequestService>();
+builder.Services.AddScoped<IOrganizationRequestService, OrganizationRequestService>();
 builder.Services.AddScoped<IMilitaryUnitService , MilitaryUnitService>();
+builder.Services.AddScoped<IFundraiserService , FundraiserService>();
 #endregion
  
 #region app

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Net.Sockets;
+using Microsoft.EntityFrameworkCore;
 using VolunteerHQ.Core.DTOs.AuthDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
@@ -45,9 +46,7 @@ public class ValidatorService
         return request;
     }
 
-    public async Task
-        CanManageRequestsToOrg(int userId, int orgId,
-            CancellationToken ct = default) // validation ONLY FOR APPROVE VOLUNTEER
+    public async Task CanManageRequestsToOrg(int userId, int orgId, CancellationToken ct = default) // validation ONLY FOR APPROVE VOLUNTEER
     {
         var user = await GetUserInOrganizationOrThrow(userId, orgId, ct);
 
@@ -90,5 +89,23 @@ public class ValidatorService
 
         if (token == null) throw new NotFoundException("Refresh token not found");
         return token;
+    }
+
+    public async Task<MilitaryUnitModel> GetUnitOrThrow(int unitId, CancellationToken ct = default)
+    {
+        var unit = await _db.MilitaryUnits.FirstOrDefaultAsync(u => u.Id == unitId, ct);
+        if (unit == null) throw new NotFoundException("Unit not found");
+        return unit;
+    }
+    
+    public async Task<FundraiserModel> GetFundraiserOrThrow(int fundraiserId, CancellationToken ct = default)
+    {
+        var fundraiser = await _db.Fundraisers
+            .Include(f => f.Assignments)
+            .FirstOrDefaultAsync(f => f.Id == fundraiserId, ct);
+            
+            
+        if (fundraiser == null) throw new NotFoundException("Fundraiser not found");
+        return fundraiser;
     }
 }
