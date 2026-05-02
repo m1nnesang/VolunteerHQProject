@@ -31,7 +31,9 @@ public class ValidatorService
 
     public async Task<OrganizationModel> GetOrganizationOrThrow(int orgId, CancellationToken ct = default)
     {
-        var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Id == orgId, ct);
+        var org = await _db.Organizations
+            .Include(o => o.Memberships)
+            .FirstOrDefaultAsync(o => o.Id == orgId, ct);
 
         if (org == null) throw new NotFoundException("Organization not found");
         return org;
@@ -107,5 +109,19 @@ public class ValidatorService
             
         if (fundraiser == null) throw new NotFoundException("Fundraiser not found");
         return fundraiser;
+    }
+
+    public async Task<CommentModel> GetCommentOrThrow(int commentId, CancellationToken ct = default)
+    {
+        var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == commentId, ct);
+        if (comment == null) throw new NotFoundException("Comment not found");
+        return comment;
+    }
+
+    public async Task<PrivateMessageModel> GetMessageOrThrow(int messageId, CancellationToken ct = default)
+    {
+        var message = await _db.PrivateMessages.FirstOrDefaultAsync(m => m.Id == messageId, ct);
+        if (message == null) throw new NotFoundException("Message not found");
+        return message;
     }
 }

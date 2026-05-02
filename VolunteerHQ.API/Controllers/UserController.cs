@@ -6,7 +6,7 @@ using VolunteerHQ.Infrastructure.Services.Interfaces;
 namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
-[Route("/api[controller]")]
+[Route("api/[controller]")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;

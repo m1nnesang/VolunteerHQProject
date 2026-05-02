@@ -36,6 +36,7 @@ public class OrganizationService : IOrganizationService
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(m => new MembershipResponseDto(m.Id, m.OrganizationId, m.MemberRole, m.JoinedAt))
+            .AsNoTracking()
             .ToListAsync(ct);
 
         return new PagedResponseDto<MembershipResponseDto>(items, total, page, pageSize);

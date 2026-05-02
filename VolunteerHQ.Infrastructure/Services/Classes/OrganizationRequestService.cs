@@ -73,6 +73,7 @@ public class OrganizationRequestService : IOrganizationRequestService
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(r => new OrganizationRequestResponseDto (r.Id , r.UserId , r.Bio , r.Experience , r.Skills, r.CvFilePath, r.ProposedName, r.City , r.Description, r.Status, r.ReviewedAt, r.ReviewedByUserId, r.AdminComment ))
+                .AsNoTracking()
             .ToListAsync(ct);
 
         return new PagedResponseDto<OrganizationRequestResponseDto>(items, total, page, pageSize);

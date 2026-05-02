@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.DonationDTOs;
 using VolunteerHQ.Core.DTOs.FundraiserDTOs;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
@@ -35,9 +36,9 @@ public class FundraiserController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(int page = 1, int pageSize = 20, CancellationToken ct = default)
+    public async Task<IActionResult> GetAll([FromQuery] PaginationDto pagination, CancellationToken ct = default)
     {
-        var result = await _service.GetAllFundraisers(page, pageSize, ct);
+        var result = await _service.GetAllFundraisers(pagination.Page, pagination.PageSize, ct);
         return Ok(result);
     }
 

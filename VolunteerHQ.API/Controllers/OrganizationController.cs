@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.MembershipDTOs;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -26,9 +27,9 @@ public class OrganizationController : ControllerBase
     }
 
     [HttpGet("{orgId}/members")]
-    public async Task<IActionResult> GetMembers(int orgId, int page = 1 , int pageSize = 20,  CancellationToken ct = default)
+    public async Task<IActionResult> GetMembers(int orgId, [FromQuery] PaginationDto pagination, CancellationToken ct = default)
     {
-        var members = await _orgService.GetOrganizationMembers(orgId, page , pageSize , ct);
+        var members = await _orgService.GetOrganizationMembers(orgId, pagination.Page, pagination.PageSize, ct);
         return Ok(members);
     }
 

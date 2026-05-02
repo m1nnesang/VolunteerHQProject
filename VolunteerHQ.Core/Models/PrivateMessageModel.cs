@@ -13,6 +13,7 @@ public class PrivateMessageModel
     public required string Text { get; set; }
     
     public bool IsRead { get; set; }
+    public bool IsEdited { get; set; }
     
     public DateTime SentAt { get; set; }
 }

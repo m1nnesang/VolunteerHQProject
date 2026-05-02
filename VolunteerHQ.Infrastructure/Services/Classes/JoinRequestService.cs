@@ -63,6 +63,7 @@ public class JoinRequestService : IJoinRequestService
             .Where(r => r.OrganizationId == orgId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .AsNoTracking()
             .Select(r => new JoinRequestResponseDto(r.Id, r.UserId, r.OrganizationId, r.Status, r.CreatedAt, r.ReviewedAt, r.ReviewedByUserId))
             .ToListAsync(ct);
 

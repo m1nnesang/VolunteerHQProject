@@ -84,6 +84,8 @@ builder.Services.AddScoped<IJoinRequestService , JoinRequestService>();
 builder.Services.AddScoped<IOrganizationRequestService, OrganizationRequestService>();
 builder.Services.AddScoped<IMilitaryUnitService , MilitaryUnitService>();
 builder.Services.AddScoped<IFundraiserService , FundraiserService>();
+builder.Services.AddScoped<IPrivateMessageService , PrivateMessageService>();
+builder.Services.AddScoped<ICommentService , CommentService>();
 #endregion
  
 #region app

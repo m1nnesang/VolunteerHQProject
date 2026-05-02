@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.JoinRequestDTOs;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -39,9 +40,9 @@ public class JoinRequestController : ControllerBase
 
     [Authorize]
     [HttpGet("org/{orgId}")]
-    public async Task<IActionResult> GetAll(int orgId, int page = 1, int pageSize = 20 , CancellationToken ct = default)
+    public async Task<IActionResult> GetAll(int orgId, [FromQuery] PaginationDto pagination, CancellationToken ct = default)
     {
-        var result = await _service.GetAllJoinRequests(orgId, page, pageSize, ct);
+        var result = await _service.GetAllJoinRequests(orgId, pagination.Page, pagination.PageSize, ct);
 
         return Ok(result);
     }

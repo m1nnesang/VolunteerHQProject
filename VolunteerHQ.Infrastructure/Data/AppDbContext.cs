@@ -48,19 +48,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<FundraiserAssignmentModel>()
             .HasIndex(f => f.UniqueCode)
             .IsUnique();
-
-        modelBuilder.Entity<FundraiserAssignmentModel>()
-            .Property(f => f.AmountRaised)
-            .HasPrecision(18, 2);
         #endregion
         
         #region FundraiserModel
         modelBuilder.Entity<FundraiserModel>()
             .Property(f => f.TotalGoal)
-            .HasPrecision(18, 2);
-
-        modelBuilder.Entity<FundraiserModel>()
-            .Property(f => f.CurrentProgress)
             .HasPrecision(18, 2);
         #endregion
 

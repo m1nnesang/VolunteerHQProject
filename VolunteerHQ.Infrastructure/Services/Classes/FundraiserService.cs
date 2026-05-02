@@ -25,27 +25,24 @@ public class FundraiserService : IFundraiserService
     {
         await _vs.GetUnitOrThrow(unitId, ct);
 
-        var fundraiser = new FundraiserModel()
+        var fundraiser = new FundraiserModel
         {
             MilitaryUnitId = unitId,
-            CurrentProgress = 0,
             Status = FundraiserStatus.Open,
             Title = dto.Title,
             Importance = dto.Importance,
             Deadline = dto.Deadline,
             Description = dto.Description,
             Assignments = new List<FundraiserAssignmentModel>(),
-            TotalGoal = dto.TotalGoal
+            TotalGoal = dto.TotalGoal,
+            CreatedAt = DateTime.UtcNow
         };
-
-
 
         await _db.Fundraisers.AddAsync(fundraiser, ct);
         await _db.SaveChangesAsync(ct);
 
         return new FundraiserResponseDto(fundraiser.Id, fundraiser.MilitaryUnitId, fundraiser.Title,
-            fundraiser.Description,
-            fundraiser.TotalGoal, fundraiser.CurrentProgress, fundraiser.Importance,
+            fundraiser.Description, fundraiser.TotalGoal, 0m, fundraiser.Importance,
             fundraiser.Status, new List<FundraiserAssignmentResponseDto>(),
             fundraiser.Deadline, fundraiser.CreatedAt);
     }
@@ -54,30 +51,68 @@ public class FundraiserService : IFundraiserService
     {
         var fundraiser = await _vs.GetFundraiserOrThrow(fundraiserId, ct);
 
+        var currentProgress = await _db.Donations
+            .Where(d => d.FundraiserId == fundraiserId)
+            .SumAsync(d => (decimal?)d.Amount, ct) ?? 0m;
+
+        var assignmentAmounts = await _db.Donations
+            .Where(d => d.FundraiserId == fundraiserId && d.FundraiserAssignmentId != null)
+            .GroupBy(d => d.FundraiserAssignmentId!.Value)
+            .Select(g => new { AssignmentId = g.Key, Total = g.Sum(d => d.Amount) })
+            .ToDictionaryAsync(x => x.AssignmentId, x => x.Total, ct);
+
+        var assignments = fundraiser.Assignments
+            .Select(a => new FundraiserAssignmentResponseDto(
+                a.Id, assignmentAmounts.GetValueOrDefault(a.Id, 0m),
+                a.OrganizationId, a.UniqueCode, a.TakenAt))
+            .ToList();
+
         return new FundraiserResponseDto(fundraiser.Id, fundraiser.MilitaryUnitId, fundraiser.Title,
-            fundraiser.Description,
-            fundraiser.TotalGoal, fundraiser.CurrentProgress, fundraiser.Importance,
-            fundraiser.Status, fundraiser.Assignments.Select(a => new FundraiserAssignmentResponseDto(a.Id, a.AmountRaised, a.OrganizationId , a.UniqueCode , a.TakenAt)).ToList(),
-            fundraiser.Deadline, fundraiser.CreatedAt);
+            fundraiser.Description, fundraiser.TotalGoal, currentProgress, fundraiser.Importance,
+            fundraiser.Status, assignments, fundraiser.Deadline, fundraiser.CreatedAt);
     }
 
     public async Task<PagedResponseDto<FundraiserResponseDto>> GetAllFundraisers(int page = 1, int pageSize = 20, CancellationToken ct = default)
     {
         var total = await _db.Fundraisers.CountAsync(ct);
-        
-        var items = await _db.Fundraisers
+
+        var fundraisers = await _db.Fundraisers
+            .Include(f => f.Assignments)
+            .OrderByDescending(f => f.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(f => new FundraiserResponseDto(f.Id , f.MilitaryUnitId, f.Title , f.Description, f.TotalGoal, f.CurrentProgress, f.Importance, f.Status, f.Assignments.Select(a => new FundraiserAssignmentResponseDto(a.Id, a.AmountRaised, a.OrganizationId , a.UniqueCode , a.TakenAt)).ToList(), f.Deadline, f.CreatedAt ))
+            .AsNoTracking()
             .ToListAsync(ct);
-        
+
+        var fundraiserIds = fundraisers.Select(f => f.Id).ToList();
+
+        var progressMap = await _db.Donations
+            .Where(d => fundraiserIds.Contains(d.FundraiserId))
+            .GroupBy(d => d.FundraiserId)
+            .Select(g => new { FundraiserId = g.Key, Total = g.Sum(d => d.Amount) })
+            .ToDictionaryAsync(x => x.FundraiserId, x => x.Total, ct);
+
+        var assignmentAmountMap = await _db.Donations
+            .Where(d => fundraiserIds.Contains(d.FundraiserId) && d.FundraiserAssignmentId != null)
+            .GroupBy(d => d.FundraiserAssignmentId!.Value)
+            .Select(g => new { AssignmentId = g.Key, Total = g.Sum(d => d.Amount) })
+            .ToDictionaryAsync(x => x.AssignmentId, x => x.Total, ct);
+
+        var items = fundraisers.Select(f => new FundraiserResponseDto(
+            f.Id, f.MilitaryUnitId, f.Title, f.Description, f.TotalGoal,
+            progressMap.GetValueOrDefault(f.Id, 0m),
+            f.Importance, f.Status,
+            f.Assignments.Select(a => new FundraiserAssignmentResponseDto(
+                a.Id,
+                assignmentAmountMap.GetValueOrDefault(a.Id, 0m),
+                a.OrganizationId, a.UniqueCode, a.TakenAt)).ToList(),
+            f.Deadline, f.CreatedAt)).ToList();
+
         return new PagedResponseDto<FundraiserResponseDto>(items, total, page, pageSize);
     }
 
     public async Task<FundraiserAssignmentResponseDto> AssignOrganization(int fundraiserId, int userId, int orgId, CancellationToken ct = default)
     {
-        var uniqueCode = Guid.NewGuid().ToString();
-        
         await _vs.GetFundraiserOrThrow(fundraiserId, ct);
         var user = await _vs.GetUserInOrganizationOrThrow(userId, orgId, ct);
 
@@ -91,20 +126,19 @@ public class FundraiserService : IFundraiserService
 
         if (existing != null) throw new ConflictException("Організація вже підключена до цього збору");
 
-        var assing = new FundraiserAssignmentModel()
+        var assignment = new FundraiserAssignmentModel
         {
             FundraiserId = fundraiserId,
             OrganizationId = orgId,
-            UniqueCode = uniqueCode,
-            AmountRaised = 0,
+            UniqueCode = Guid.NewGuid().ToString(),
             TakenAt = DateTime.UtcNow,
         };
-        
-        await _db.FundraiserAssignments.AddAsync(assing, ct);
+
+        await _db.FundraiserAssignments.AddAsync(assignment, ct);
         await _db.SaveChangesAsync(ct);
 
-        return new FundraiserAssignmentResponseDto(assing.Id, assing.AmountRaised, assing.OrganizationId,
-            assing.UniqueCode, assing.TakenAt);
+        return new FundraiserAssignmentResponseDto(assignment.Id, 0m, assignment.OrganizationId,
+            assignment.UniqueCode, assignment.TakenAt);
     }
 
     public async Task<DonationResponseDto> Donate(int? userId, string uniqueCode, CreateDonationDto dto, CancellationToken ct = default)
@@ -125,27 +159,22 @@ public class FundraiserService : IFundraiserService
             IsAnonymous = userId == null,
             CreatedAt = DateTime.UtcNow
         };
-
-        assignment.AmountRaised += donation.Amount;
-        fundraiser.CurrentProgress += donation.Amount;
         
-        if (fundraiser.Status == FundraiserStatus.Open)
-            fundraiser.Status = FundraiserStatus.InProgress;
-        
-        if (fundraiser.CurrentProgress >= fundraiser.TotalGoal)
-            fundraiser.Status = FundraiserStatus.Completed;
-
-        await _db.AddAsync(donation, ct);
+        await _db.Donations.AddAsync(donation, ct);
         await _db.SaveChangesAsync(ct);
         
+        if (fundraiser.Status is not FundraiserStatus.Completed and not FundraiserStatus.Closed)
+            await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
+
+        await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
+
         return new DonationResponseDto(donation.Id, donation.UserId, donation.Amount, donation.CreatedAt);
     }
 
-    public async Task<DonationResponseDto> DirectDonate(int? userId, int fundraiserId, CreateDonationDto dto,
-        CancellationToken ct = default)
+    public async Task<DonationResponseDto> DirectDonate(int? userId, int fundraiserId, CreateDonationDto dto, CancellationToken ct = default)
     {
         var fundraiser = await _vs.GetFundraiserOrThrow(fundraiserId, ct);
-        
+
         var donation = new DonationModel
         {
             FundraiserId = fundraiserId,
@@ -155,19 +184,37 @@ public class FundraiserService : IFundraiserService
             IsAnonymous = userId == null,
             CreatedAt = DateTime.UtcNow
         };
-        
-        fundraiser.CurrentProgress += donation.Amount;
-        
-        if (fundraiser.Status == FundraiserStatus.Open)
-            fundraiser.Status = FundraiserStatus.InProgress;
-        
-        if (fundraiser.CurrentProgress >= fundraiser.TotalGoal)
-            fundraiser.Status = FundraiserStatus.Completed;
 
-        await _db.AddAsync(donation, ct);
+        await _db.Donations.AddAsync(donation, ct);
         await _db.SaveChangesAsync(ct);
         
+        if (fundraiser.Status is not FundraiserStatus.Completed and not FundraiserStatus.Closed)
+            await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
+
+        await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
+
         return new DonationResponseDto(donation.Id, donation.UserId, donation.Amount, donation.CreatedAt);
+    }
+
+    private async Task UpdateFundraiserStatus(int fundraiserId, decimal totalGoal, CancellationToken ct)
+    {
+        var progress = await _db.Donations
+            .Where(d => d.FundraiserId == fundraiserId)
+            .SumAsync(d => d.Amount, ct);
+
+        var currentStatus = await _db.Fundraisers
+            .Where(f => f.Id == fundraiserId)
+            .Select(f => f.Status).FirstAsync(ct);
+        
+        if (currentStatus == FundraiserStatus.Completed) return; // save from RC in status update
+        
+        var newStatus = progress >= totalGoal
+            ? FundraiserStatus.Completed
+            : FundraiserStatus.InProgress;
+
+        await _db.Fundraisers
+            .Where(f => f.Id == fundraiserId)
+            .ExecuteUpdateAsync(s => s.SetProperty(f => f.Status, newStatus), ct);
     }
 
 }

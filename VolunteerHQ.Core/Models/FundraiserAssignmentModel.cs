@@ -12,7 +12,5 @@ public class FundraiserAssignmentModel
     
     public required string UniqueCode { get; set; }
     
-    public decimal AmountRaised { get; set; }
-    
     public DateTime TakenAt { get; set; }
 }

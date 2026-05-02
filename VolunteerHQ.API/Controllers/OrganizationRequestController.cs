@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.OrganizationRequestDTOs;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -40,10 +41,10 @@ public class OrganizationRequestController : ControllerBase
 
     [Authorize]
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllRequests(int page = 1 , int pageSize = 20 ,CancellationToken ct = default)
+    public async Task<IActionResult> GetAllRequests([FromQuery] PaginationDto pagination, CancellationToken ct = default)
     {
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
-        var result = await _orgReqService.GetAllRequests(userId, page, pageSize, ct);
+        var result = await _orgReqService.GetAllRequests(userId, pagination.Page, pagination.PageSize, ct);
 
         return Ok(result);
     }
