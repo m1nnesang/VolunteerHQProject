@@ -14,11 +14,13 @@ public class JoinRequestService : IJoinRequestService
 {
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs; // validation service!
+    private readonly INotificationService _ns;
 
-    public JoinRequestService(AppDbContext db , ValidatorService vs)
+    public JoinRequestService(AppDbContext db , ValidatorService vs , INotificationService ns)
     {
         _db = db;
         _vs = vs;
+        _ns = ns;
     }
     
     
@@ -101,6 +103,12 @@ public class JoinRequestService : IJoinRequestService
        }
 
        await _db.SaveChangesAsync(ct);
+       
+       var text = dto.Status == RequestStatus.Approved 
+           ? "Вашу заявку до організації схвалено" 
+           : "Вашу заявку до організації відхилено";
+
+       await _ns.SendNotification(request.UserId!.Value, text, $"/organization/{orgId}", ct);
        
        return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, request.Status,
            request.CreatedAt , request.ReviewedAt , request.ReviewedByUserId );

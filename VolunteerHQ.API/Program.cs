@@ -8,6 +8,7 @@ using VolunteerHQ.Infrastructure.Data;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using VolunteerHQ.API.Validators;
+using VolunteerHQ.Core.Settings;
 using VolunteerHQ.Infrastructure.Services.Classes;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -40,6 +41,8 @@ builder.Services.AddHttpClient<NovaPoshtaService>();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
@@ -86,6 +89,9 @@ builder.Services.AddScoped<IMilitaryUnitService , MilitaryUnitService>();
 builder.Services.AddScoped<IFundraiserService , FundraiserService>();
 builder.Services.AddScoped<IPrivateMessageService , PrivateMessageService>();
 builder.Services.AddScoped<ICommentService , CommentService>();
+builder.Services.AddScoped<INotificationService , NotificationService>();
+builder.Services.AddScoped<ISubscriptionService , SubscriptionService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 #endregion
  
 #region app

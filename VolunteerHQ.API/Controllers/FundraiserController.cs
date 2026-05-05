@@ -52,12 +52,12 @@ public class FundraiserController : ControllerBase
     }
 
     [HttpPost("donate/{uniqueCode}")]
-    public async Task<IActionResult> Donate(string uniqueCode, [FromBody] CreateDonationDto dto, CancellationToken ct = default)
+    public async Task<IActionResult> Donate(string uniqueCode, int fundraiserId,  [FromBody] CreateDonationDto dto, CancellationToken ct = default)
     {
         var userId = User.Identity?.IsAuthenticated == true
             ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!)
             : (int?)null;
-        var result = await _service.Donate(userId, uniqueCode, dto, ct);
+        var result = await _service.Donate(userId, fundraiserId ,uniqueCode , dto, ct);
         return Ok(result);
     }
     

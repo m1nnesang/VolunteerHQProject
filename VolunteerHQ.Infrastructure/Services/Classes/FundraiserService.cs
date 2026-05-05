@@ -14,11 +14,13 @@ public class FundraiserService : IFundraiserService
 {
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs;
+    private readonly INotificationService _ns;
 
-    public FundraiserService(AppDbContext db, ValidatorService vs)
+    public FundraiserService(AppDbContext db, ValidatorService vs, INotificationService ns)
     {
         _db = db;
         _vs = vs;
+        _ns = ns;
     }
 
     public async Task<FundraiserResponseDto> CreateFundraiser(int unitId, CreateFundraiserDto dto, CancellationToken ct = default)
@@ -141,7 +143,7 @@ public class FundraiserService : IFundraiserService
             assignment.UniqueCode, assignment.TakenAt);
     }
 
-    public async Task<DonationResponseDto> Donate(int? userId, string uniqueCode, CreateDonationDto dto, CancellationToken ct = default)
+    public async Task<DonationResponseDto> Donate(int? userId, int fundraiserId , string uniqueCode, CreateDonationDto dto, CancellationToken ct = default)
     {
         var assignment = await _db.FundraiserAssignments
             .FirstOrDefaultAsync(a => a.UniqueCode == uniqueCode, ct);
@@ -167,6 +169,9 @@ public class FundraiserService : IFundraiserService
             await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
 
         await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
+        
+        if (userId != null)
+            await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);
 
         return new DonationResponseDto(donation.Id, donation.UserId, donation.Amount, donation.CreatedAt);
     }
@@ -192,8 +197,12 @@ public class FundraiserService : IFundraiserService
             await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
 
         await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
+        
+        if (userId != null)
+            await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);
 
         return new DonationResponseDto(donation.Id, donation.UserId, donation.Amount, donation.CreatedAt);
+        
     }
 
     private async Task UpdateFundraiserStatus(int fundraiserId, decimal totalGoal, CancellationToken ct)
@@ -211,10 +220,24 @@ public class FundraiserService : IFundraiserService
         var newStatus = progress >= totalGoal
             ? FundraiserStatus.Completed
             : FundraiserStatus.InProgress;
+        
 
         await _db.Fundraisers
             .Where(f => f.Id == fundraiserId)
             .ExecuteUpdateAsync(s => s.SetProperty(f => f.Status, newStatus), ct);
+
+        if (newStatus == FundraiserStatus.Completed)
+        {
+            var donaters = await _db.Donations
+                .Where(d => d.FundraiserId == fundraiserId && d.UserId != null)
+                .Select(d => d.UserId!.Value)
+                .Distinct()
+                .ToListAsync(ct);
+            
+            foreach (var donorId in donaters)
+                await _ns.SendNotification(donorId, "Збір завершено!", $"/fundraiser/{fundraiserId}", ct);
+        
+        }
     }
 
 }

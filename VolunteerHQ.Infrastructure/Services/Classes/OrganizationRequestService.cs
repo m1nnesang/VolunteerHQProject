@@ -13,11 +13,13 @@ public class OrganizationRequestService : IOrganizationRequestService
 {
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs; // validation service!
+    private readonly INotificationService _ns;
 
-    public OrganizationRequestService(AppDbContext db, ValidatorService vs)
+    public OrganizationRequestService(AppDbContext db, ValidatorService vs, INotificationService ns)
     {
         _db = db;
         _vs = vs;
+        _ns = ns;
     }
 
     public async Task<OrganizationRequestResponseDto> CreateRequest(int userId, CreateOrganizationRequestDto dto,
@@ -116,7 +118,13 @@ public class OrganizationRequestService : IOrganizationRequestService
         }
         
         await _db.SaveChangesAsync(ct);
+        
+        var text = dto.Status == RequestStatus.Approved
+            ? "Вашу заявку на створення організації схвалено"
+            : "Вашу заявку на створення організації відхилено";
 
+        await _ns.SendNotification(request.UserId, text, "/organization", ct);
+        
         return new OrganizationRequestResponseDto(request.Id, request.UserId, request.Bio, request.Experience,
             request.Skills, request.CvFilePath, request.ProposedName, request.City,
             request.Description, request.Status, request.CreatedAt,
