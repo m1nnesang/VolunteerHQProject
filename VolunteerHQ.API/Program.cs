@@ -92,6 +92,8 @@ builder.Services.AddScoped<ICommentService , CommentService>();
 builder.Services.AddScoped<INotificationService , NotificationService>();
 builder.Services.AddScoped<ISubscriptionService , SubscriptionService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 #endregion
  
 #region app

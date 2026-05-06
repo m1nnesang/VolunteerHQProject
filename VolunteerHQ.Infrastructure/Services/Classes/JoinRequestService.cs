@@ -13,14 +13,16 @@ namespace VolunteerHQ.Infrastructure.Services.Classes;
 public class JoinRequestService : IJoinRequestService
 {
     private readonly AppDbContext _db;
-    private readonly ValidatorService _vs; // validation service!
+    private readonly ValidatorService _vs;
+    private readonly IAuditLogService _als;
     private readonly INotificationService _ns;
 
-    public JoinRequestService(AppDbContext db , ValidatorService vs , INotificationService ns)
+    public JoinRequestService(AppDbContext db, ValidatorService vs, INotificationService ns, IAuditLogService als)
     {
         _db = db;
         _vs = vs;
         _ns = ns;
+        _als = als;
     }
     
     
@@ -109,6 +111,9 @@ public class JoinRequestService : IJoinRequestService
            : "Вашу заявку до організації відхилено";
 
        await _ns.SendNotification(request.UserId!.Value, text, $"/organization/{orgId}", ct);
+
+       await _als.Log(reviewerId, dto.Status.ToString(), "JoinRequest", request.Id,
+           $"JoinRequest {request.Id} marked as {dto.Status} by user {reviewerId}", ct);
        
        return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, request.Status,
            request.CreatedAt , request.ReviewedAt , request.ReviewedByUserId );

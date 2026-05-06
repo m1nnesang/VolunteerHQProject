@@ -124,4 +124,12 @@ public class ValidatorService
         if (message == null) throw new NotFoundException("Message not found");
         return message;
     }
+
+    public async Task<ReportModel> GetReportOrThrow(int reportId, CancellationToken ct = default)
+    {
+        var report = await _db.Reports.FirstOrDefaultAsync(r => r.Id == reportId, ct);
+        
+        if (report == null) throw new NotFoundException("Report not found");
+        return report;
+    }
 }
