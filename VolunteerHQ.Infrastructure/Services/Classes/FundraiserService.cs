@@ -115,8 +115,12 @@ public class FundraiserService : IFundraiserService
 
     public async Task<FundraiserAssignmentResponseDto> AssignOrganization(int fundraiserId, int userId, int orgId, CancellationToken ct = default)
     {
-        await _vs.GetFundraiserOrThrow(fundraiserId, ct);
-        var user = await _vs.GetUserInOrganizationOrThrow(userId, orgId, ct);
+       var fundraiser = await _vs.GetFundraiserOrThrow(fundraiserId, ct);
+       
+       if (fundraiser.Status == FundraiserStatus.Completed)
+           throw new ConflictException("Неможливо підключитись до збору");
+       
+       var user = await _vs.GetUserInOrganizationOrThrow(userId, orgId, ct);
 
         if (user.MemberRole != OrganizationMemberRole.Deputy && user.MemberRole != OrganizationMemberRole.Leader)
         {
@@ -167,8 +171,6 @@ public class FundraiserService : IFundraiserService
         
         if (fundraiser.Status is not FundraiserStatus.Completed and not FundraiserStatus.Closed)
             await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
-
-        await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
         
         if (userId != null)
             await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);
@@ -195,8 +197,6 @@ public class FundraiserService : IFundraiserService
         
         if (fundraiser.Status is not FundraiserStatus.Completed and not FundraiserStatus.Closed)
             await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
-
-        await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
         
         if (userId != null)
             await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);

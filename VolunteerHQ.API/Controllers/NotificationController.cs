@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
@@ -8,7 +7,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class NotificationController : ControllerBase
+public class NotificationController : BaseController
 {
     private readonly INotificationService _notificationService;
     
@@ -21,7 +20,7 @@ public class NotificationController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetNotifications([FromQuery] PaginationDto pagination, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
 
         var result = await _notificationService.GetNotifications(userId, pagination, ct);
         
@@ -32,7 +31,7 @@ public class NotificationController : ControllerBase
     [Authorize]
     public async Task<IActionResult> MarkAsRead(int notificationId, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         
         await _notificationService.MarkAsRead(userId, notificationId, ct);
         

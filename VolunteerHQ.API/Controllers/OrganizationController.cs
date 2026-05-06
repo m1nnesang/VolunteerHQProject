@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.MembershipDTOs;
@@ -10,7 +9,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrganizationController : ControllerBase
+public class OrganizationController : BaseController
 {
     private readonly IOrganizationService _orgService;
 
@@ -37,7 +36,7 @@ public class OrganizationController : ControllerBase
     [HttpDelete("{orgId}/members/{targetId}")]
     public async Task<IActionResult> RemoveMember(int orgId, int targetId, CancellationToken ct = default)
     {
-        var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var requesterId = CurrentUserId;
         await _orgService.RemoveMember(orgId, requesterId, targetId, ct);
 
         return NoContent();
@@ -47,7 +46,7 @@ public class OrganizationController : ControllerBase
     [HttpPut("{orgId}/members/{targetId}/role")]
     public async Task<IActionResult> UpdateMember(int orgId, int targetId, [FromBody] UpdateMemberRoleDto dto,CancellationToken ct = default)
     {
-        var requesterId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var requesterId = CurrentUserId;
         await _orgService.UpdateMemberRole(orgId, requesterId, targetId, dto,  ct);
 
         return NoContent();

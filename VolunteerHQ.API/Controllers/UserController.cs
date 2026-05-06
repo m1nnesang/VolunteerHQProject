@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -7,7 +6,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController : ControllerBase
+public class UserController : BaseController
 {
     private readonly IUserService _userService;
 
@@ -20,7 +19,7 @@ public class UserController : ControllerBase
     [HttpGet("me")]
         public async Task<IActionResult> GetMe()
         { 
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var userId = CurrentUserId;
             var result = await _userService.GetMe(userId);
 
             return Ok(result);

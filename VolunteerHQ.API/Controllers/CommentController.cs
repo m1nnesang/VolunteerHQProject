@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.CommentsDTOs;
 using VolunteerHQ.Core.DTOs.Common;
@@ -9,7 +8,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/fundraiser/{fundraiserId}/comments")]
-public class CommentController : ControllerBase
+public class CommentController : BaseController
 {
     private readonly ICommentService _commentService;
 
@@ -23,7 +22,7 @@ public class CommentController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateCommentDto dto, int fundraiserId,
         CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
 
         var result = await _commentService.CreateComment(userId, fundraiserId, dto, ct);
         return Ok(result);
@@ -41,7 +40,7 @@ public class CommentController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Delete(int fundraiserId,int commentId ,  CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
 
         await _commentService.DeleteComment(userId, commentId, ct);
 

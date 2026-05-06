@@ -110,6 +110,18 @@ public class AppDbContext : DbContext
             .HasOne(v => v.User)
             .WithOne(u => u.VolunteerProfile)
             .HasForeignKey<VolunteerProfileModel>(v => v.UserId);
+        
+        modelBuilder.Entity<CommentModel>()
+            .HasIndex(c => c.FundraiserId);
+
+        modelBuilder.Entity<DonationModel>()
+            .HasIndex(d => d.FundraiserId);
+
+        modelBuilder.Entity<JoinRequestModel>()
+            .HasIndex(j => j.OrganizationId);
+
+        modelBuilder.Entity<PrivateMessageModel>()
+            .HasIndex(m => new { m.SenderId, m.ReceiverId, m.SentAt });
 
 
     }

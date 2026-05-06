@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.SubscriptionDTOs;
@@ -10,7 +9,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SubscriptionController : ControllerBase
+public class SubscriptionController : BaseController
 {
     private readonly ISubscriptionService _subscriptionService;
 
@@ -23,7 +22,7 @@ public class SubscriptionController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Subscribe([FromBody] CreateSubscriptionDto dto, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
 
         var result = await _subscriptionService.Subscribe(userId, dto, ct);
 
@@ -34,7 +33,7 @@ public class SubscriptionController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Unsubscribe(int subscriptionId, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
 
         await _subscriptionService.Unsubscribe(userId, subscriptionId, ct);
 
@@ -45,7 +44,7 @@ public class SubscriptionController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetSubscriptions([FromQuery] PaginationDto dto, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
 
         var result = await _subscriptionService.GetSubscriptions(userId, dto, ct);
         

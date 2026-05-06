@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.Common;
@@ -8,7 +7,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/auditlog")]
-public class AuditLogController : ControllerBase
+public class AuditLogController : BaseController
 {
     private readonly IAuditLogService _auditLogService;
 
@@ -21,7 +20,7 @@ public class AuditLogController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetLogs([FromQuery] PaginationDto pagination, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _auditLogService.GetLogs(userId, pagination, ct);
         return Ok(result);
     }

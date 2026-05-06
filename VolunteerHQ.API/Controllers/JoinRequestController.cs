@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.Common;
@@ -9,7 +8,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class JoinRequestController : ControllerBase
+public class JoinRequestController : BaseController
 {
     private readonly IJoinRequestService _service;
 
@@ -22,7 +21,7 @@ public class JoinRequestController : ControllerBase
     [HttpPost("{orgId}")]
     public async Task<IActionResult> Create(int orgId, [FromBody] CreateJoinRequestDto dto, CancellationToken ct)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _service.CreateJoinRequest(userId, orgId, dto, ct);
 
         return Ok(result);
@@ -32,7 +31,7 @@ public class JoinRequestController : ControllerBase
     [HttpGet("{requestId}")]
     public async Task<IActionResult> Get(int requestId, int orgId, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _service.GetJoinRequest(requestId, userId, orgId, ct);
 
         return Ok(result);
@@ -51,7 +50,7 @@ public class JoinRequestController : ControllerBase
     [HttpPut("{requestId}/review/{orgId}")]
     public async Task<IActionResult> Review(int requestId, int orgId, [FromBody] ReviewJoinRequestDto dto, CancellationToken ct = default)
     {
-        var reviewerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var reviewerId = CurrentUserId;
         var result = await _service.ReviewJoinRequest(dto, reviewerId, orgId, requestId , ct);
 
         return Ok(result);

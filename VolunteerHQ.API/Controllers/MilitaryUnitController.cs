@@ -1,6 +1,6 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using VolunteerHQ.Core.DTOs.MilitaryDTOs;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -8,7 +8,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MilitaryUnitController : ControllerBase
+public class MilitaryUnitController : BaseController
 {
     private readonly IMilitaryUnitService _militaryUnitService;
     
@@ -21,13 +21,14 @@ public class MilitaryUnitController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> Create(RegisterMilitaryUnitDto dto)
     {
-        var adminId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var adminId = CurrentUserId;
         var result = await _militaryUnitService.CreateUnit(dto , adminId);
         
         return Ok(result);
     }
 
-    [HttpPost ("login")]
+    [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login(LogMilitaryUnitDto dto)
     {
         var result = await _militaryUnitService.Login(dto);
@@ -38,8 +39,8 @@ public class MilitaryUnitController : ControllerBase
     [HttpGet("{unitId}")]
     public async Task<IActionResult> GetUnit(int unitId)
     {
-        var userId = User.Identity?.IsAuthenticated == true 
-            ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!) 
+        var userId = User.Identity?.IsAuthenticated == true
+            ? CurrentUserId
             : (int?)null;
         
         var result = await _militaryUnitService.GetUnit(unitId, userId);

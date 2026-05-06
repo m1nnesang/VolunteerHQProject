@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.OrganizationRequestDTOs;
@@ -10,7 +9,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrganizationRequestController : ControllerBase
+public class OrganizationRequestController : BaseController
 {
     
     private readonly IOrganizationRequestService _orgReqService;
@@ -24,7 +23,7 @@ public class OrganizationRequestController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateRequest([FromBody] CreateOrganizationRequestDto dto, CancellationToken ct = default )
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _orgReqService.CreateRequest(userId, dto, ct);
         return Ok(result);
     }
@@ -33,7 +32,7 @@ public class OrganizationRequestController : ControllerBase
     [HttpGet("{requestId}")]
     public async Task<IActionResult> GetRequest(int requestId , CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _orgReqService.GetCreateRequest(userId, requestId , ct);
 
         return Ok(result);
@@ -43,7 +42,7 @@ public class OrganizationRequestController : ControllerBase
     [HttpGet("all")]
     public async Task<IActionResult> GetAllRequests([FromQuery] PaginationDto pagination, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _orgReqService.GetAllRequests(userId, pagination.Page, pagination.PageSize, ct);
 
         return Ok(result);
@@ -53,7 +52,7 @@ public class OrganizationRequestController : ControllerBase
     [HttpPut("{requestId}/review")]
     public async Task<IActionResult> ReviewRequest(int requestId ,  [FromBody] ReviewOrganizationRequestDto dto, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _orgReqService.ReviewOrganizationRequest(userId, requestId, dto , ct);
 
         return Ok(result);

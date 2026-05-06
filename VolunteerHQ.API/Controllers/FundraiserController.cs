@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.DonationDTOs;
@@ -10,7 +9,7 @@ namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class FundraiserController : ControllerBase
+public class FundraiserController : BaseController
 {
     private readonly IFundraiserService _service;
 
@@ -23,7 +22,7 @@ public class FundraiserController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateFundraiserDto dto, CancellationToken ct)
     {
-        var unitId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var unitId = CurrentUserId;
         var result = await _service.CreateFundraiser(unitId, dto, ct);
         return Ok(result);
     }
@@ -46,7 +45,7 @@ public class FundraiserController : ControllerBase
     [HttpPost("{fundraiserId}/assign")]
     public async Task<IActionResult> Assign(int fundraiserId, int orgId, CancellationToken ct = default)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+        var userId = CurrentUserId;
         var result = await _service.AssignOrganization(fundraiserId, userId, orgId, ct);
         return Ok(result);
     }
@@ -55,7 +54,7 @@ public class FundraiserController : ControllerBase
     public async Task<IActionResult> Donate(string uniqueCode, int fundraiserId,  [FromBody] CreateDonationDto dto, CancellationToken ct = default)
     {
         var userId = User.Identity?.IsAuthenticated == true
-            ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!)
+            ? CurrentUserId
             : (int?)null;
         var result = await _service.Donate(userId, fundraiserId ,uniqueCode , dto, ct);
         return Ok(result);
@@ -65,7 +64,7 @@ public class FundraiserController : ControllerBase
     public async Task<IActionResult> DirectDonate(int fundraiserId, [FromBody] CreateDonationDto dto, CancellationToken ct = default)
     {
         var userId = User.Identity?.IsAuthenticated == true
-            ? int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!)
+            ? CurrentUserId
             : (int?)null;
         var result = await _service.DirectDonate(userId, fundraiserId, dto, ct);
         return Ok(result);
