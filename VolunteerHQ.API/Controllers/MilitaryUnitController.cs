@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.MilitaryDTOs;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -11,7 +12,7 @@ namespace VolunteerHQ.API.Controllers;
 public class MilitaryUnitController : BaseController
 {
     private readonly IMilitaryUnitService _militaryUnitService;
-    
+
     public MilitaryUnitController(IMilitaryUnitService militaryUnitService)
     {
         _militaryUnitService = militaryUnitService;
@@ -22,8 +23,8 @@ public class MilitaryUnitController : BaseController
     public async Task<IActionResult> Create(RegisterMilitaryUnitDto dto)
     {
         var adminId = CurrentUserId;
-        var result = await _militaryUnitService.CreateUnit(dto , adminId);
-        
+        var result = await _militaryUnitService.CreateUnit(dto, adminId);
+
         return Ok(result);
     }
 
@@ -32,7 +33,14 @@ public class MilitaryUnitController : BaseController
     public async Task<IActionResult> Login(LogMilitaryUnitDto dto)
     {
         var result = await _militaryUnitService.Login(dto);
-        
+
+        return Ok(result);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] PaginationDto pagination, CancellationToken ct = default)
+    {
+        var result = await _militaryUnitService.GetAllUnits(pagination.Page, pagination.PageSize, ct);
         return Ok(result);
     }
 
@@ -42,9 +50,9 @@ public class MilitaryUnitController : BaseController
         var userId = User.Identity?.IsAuthenticated == true
             ? CurrentUserId
             : (int?)null;
-        
+
         var result = await _militaryUnitService.GetUnit(unitId, userId);
-        
+
         return Ok(result);
     }
 }

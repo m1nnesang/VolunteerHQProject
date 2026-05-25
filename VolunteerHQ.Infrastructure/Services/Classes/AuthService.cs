@@ -8,6 +8,7 @@ using VolunteerHQ.Core.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
+using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
 using VolunteerHQ.Infrastructure.Services.Interfaces;
 
@@ -47,7 +48,7 @@ public class AuthService : IAuthService
             FirstName = dto.FirstName,
             SecondName = dto.SecondName,
             BirthDate = dto.BirthDate,
-            Role = 0,
+            Role = UserRoles.User,
             CreatedAt = DateTime.UtcNow,
         };
 
@@ -59,7 +60,7 @@ public class AuthService : IAuthService
        
         await _db.SaveChangesAsync(ct);
         
-        return new AuthResponseDto(user.Id, user.Role, token , refreshToken);
+        return new AuthResponseDto(user.Id, user.Role, token, refreshToken, user.FirstName, user.SecondName);
     }
 
     public async Task<AuthResponseDto> Login(LoginDto dto , CancellationToken ct = default)
@@ -70,7 +71,7 @@ public class AuthService : IAuthService
         {
             throw new NotFoundException("User with this email is not found");
         }
-
+        
         if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {
             throw new UnauthorizedException("Invalid Password");
@@ -81,7 +82,7 @@ public class AuthService : IAuthService
         
         await _db.SaveChangesAsync(ct);
 
-        return new AuthResponseDto(user.Id , user.Role , token , refreshToken);
+        return new AuthResponseDto(user.Id, user.Role, token, refreshToken, user.FirstName, user.SecondName);
     }
 
     public async Task<AuthResponseDto> Refresh(string refreshToken , CancellationToken ct = default)
@@ -102,7 +103,7 @@ public class AuthService : IAuthService
 
         await _db.SaveChangesAsync(ct);
 
-        return new AuthResponseDto(user.Id, user.Role, accessToken, newRefreshToken);
+        return new AuthResponseDto(user.Id, user.Role, accessToken, newRefreshToken, user.FirstName, user.SecondName);
     }
     
     
@@ -124,12 +125,16 @@ public class AuthService : IAuthService
 
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        var expiresInMinutes = int.TryParse(_configuration["Jwt:ExpiresInMinutes"], out var minutes)
+            ? minutes
+            : 60;
+
         var token = new JwtSecurityToken
         (
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(int.Parse(_configuration["Jwt:ExpiresInMinutes"]!)),
+            expires: DateTime.UtcNow.AddMinutes(expiresInMinutes),
             signingCredentials: credentials
         );
 

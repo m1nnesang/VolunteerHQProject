@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.MilitaryDTOs;
 using VolunteerHQ.Core.Enums;
 using VolunteerHQ.Core.Exceptions;
@@ -52,7 +53,7 @@ public class MilitaryUnitService : IMilitaryUnitService
         return new MilitaryUnitResponseDto(unit.Id, unit.UnitName, unit.CreatedAt, unit.ContactPersonName);
     }
 
-    public async Task<string> Login(LogMilitaryUnitDto dto, CancellationToken ct = default)
+    public async Task<MilitaryLoginResponseDto> Login(LogMilitaryUnitDto dto, CancellationToken ct = default)
     {
         var unit = await _db.MilitaryUnits.FirstOrDefaultAsync(u => u.Login == dto.Login, ct);
 
@@ -62,8 +63,27 @@ public class MilitaryUnitService : IMilitaryUnitService
             throw new UnauthorizedException("Invalid Password");
 
         var token = GenerateMilitaryToken(unit);
-        
-        return token;
+
+        return new MilitaryLoginResponseDto(unit.Id, unit.UnitName, token);
+    }
+
+    public async Task<PagedResponseDto<MilitaryUnitResponseDto>> GetAllUnits(int page, int pageSize, CancellationToken ct = default)
+    {
+        var total = await _db.MilitaryUnits.CountAsync(ct);
+
+        var items = await _db.MilitaryUnits
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .Select(u => new MilitaryUnitResponseDto(
+                u.Id,
+                u.IsNameHidden ? "********" : u.UnitName,
+                u.CreatedAt,
+                "********"))
+            .ToListAsync(ct);
+
+        return new PagedResponseDto<MilitaryUnitResponseDto>(items, total, page, pageSize);
     }
 
     public async Task<MilitaryUnitResponseDto> GetUnit(int unitId , int? userId, CancellationToken ct = default)

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using VolunteerHQ.API.Middleware;
+using VolunteerHQ.API.Hubs;
 using VolunteerHQ.Infrastructure.Data;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -36,7 +37,23 @@ builder.Services.AddAuthentication("Bearer").AddJwtBearer(options =>
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
+
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                context.Token = accessToken;
+
+            return Task.CompletedTask;
+        }
+    };
 });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddHttpClient<NovaPoshtaService>();
 
@@ -48,6 +65,16 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 builder.Services.AddFluentValidationAutoValidation();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -120,6 +147,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddScoped<IRealtimeNotifier, SignalRNotifier>();
 #endregion
  
 #region app
@@ -134,9 +162,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRateLimiter();
-app.UseHttpsRedirection();
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 app.Run();
 #endregion

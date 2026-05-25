@@ -20,7 +20,7 @@ public class StatsService : IStatsService
     public async Task<StatsResponseDto> GetStats(CancellationToken ct = default)
     {
         var activeFundraisers = await _db.Fundraisers
-            .CountAsync(f => f.Status == FundraiserStatus.InProgress, ct);
+            .CountAsync(f => f.Status == FundraiserStatus.Open || f.Status == FundraiserStatus.InProgress, ct);
 
         var completedFundraisers = await _db.Fundraisers
             .CountAsync(f => f.Status == FundraiserStatus.Completed, ct);

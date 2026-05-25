@@ -2,8 +2,7 @@
 
 public enum OrganizationMemberRole
 {
-    Leader, 
-    Deputy,
-    Moderator,
-    Member,
+    Leader = 0,
+    Deputy = 1,
+    Member = 3,
 }

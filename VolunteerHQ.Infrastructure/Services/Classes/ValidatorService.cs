@@ -53,8 +53,7 @@ public class ValidatorService
         var user = await GetUserInOrganizationOrThrow(userId, orgId, ct);
 
         if (user.MemberRole != OrganizationMemberRole.Leader &&
-            user.MemberRole != OrganizationMemberRole.Deputy &&
-            user.MemberRole != OrganizationMemberRole.Moderator)
+            user.MemberRole != OrganizationMemberRole.Deputy)
         {
             throw new NotEnoughRightsException("You don't have enough rights for this operation");
         }
@@ -104,6 +103,7 @@ public class ValidatorService
     {
         var fundraiser = await _db.Fundraisers
             .Include(f => f.Assignments)
+                .ThenInclude(a => a.Organization)
             .FirstOrDefaultAsync(f => f.Id == fundraiserId, ct);
             
             

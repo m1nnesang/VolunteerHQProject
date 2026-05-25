@@ -28,6 +28,16 @@ public class JoinRequestService : IJoinRequestService
     
     public async Task<JoinRequestResponseDto> CreateJoinRequest(int userId, int orgId, CreateJoinRequestDto dto, CancellationToken ct = default)
     {
+        var alreadyMember = await _db.OrganizationMemberships
+            .AnyAsync(m => m.UserId == userId && m.OrganizationId == orgId, ct);
+        if (alreadyMember)
+            throw new ConflictException("Ви вже є учасником цієї організації");
+
+        var existingRequest = await _db.JoinRequests
+            .AnyAsync(r => r.UserId == userId && r.OrganizationId == orgId && r.Status == RequestStatus.Pending, ct);
+        if (existingRequest)
+            throw new ConflictException("Ви вже маєте активну заявку до цієї організації");
+
         var request = new JoinRequestModel
         {
             UserId = userId,
@@ -46,7 +56,8 @@ public class JoinRequestService : IJoinRequestService
         await _db.SaveChangesAsync(ct);
 
         return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, request.Status,
-            request.CreatedAt , request.ReviewedAt , request.ReviewedByUserId );
+            request.CreatedAt , request.ReviewedAt , request.ReviewedByUserId,
+            null, null, request.Bio, request.Skills, request.Experience);
     }
 
     public async Task<JoinRequestResponseDto> GetJoinRequest(int joinRequestId , int userId , int orgId, CancellationToken ct = default)
@@ -54,9 +65,12 @@ public class JoinRequestService : IJoinRequestService
         // validators
         await _vs.CanManageRequestsToOrg(userId, orgId, ct);
         var request = await _vs.GetRequestOrThrow(joinRequestId, ct);
-        
-        return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, 
-            request.Status, request.CreatedAt, request.ReviewedAt, request.ReviewedByUserId);
+
+        return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId,
+            request.Status, request.CreatedAt, request.ReviewedAt, request.ReviewedByUserId,
+            request.User != null ? request.User.FirstName : null,
+            request.User != null ? request.User.SecondName : null,
+            request.Bio, request.Skills, request.Experience);
     }
 
     public async Task<PagedResponseDto<JoinRequestResponseDto>> GetAllJoinRequests(int orgId, int page = 1, int pageSize = 20, CancellationToken ct = default)
@@ -68,7 +82,10 @@ public class JoinRequestService : IJoinRequestService
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .AsNoTracking()
-            .Select(r => new JoinRequestResponseDto(r.Id, r.UserId, r.OrganizationId, r.Status, r.CreatedAt, r.ReviewedAt, r.ReviewedByUserId))
+            .Select(r => new JoinRequestResponseDto(r.Id, r.UserId, r.OrganizationId, r.Status, r.CreatedAt, r.ReviewedAt, r.ReviewedByUserId,
+                r.User != null ? r.User.FirstName : null,
+                r.User != null ? r.User.SecondName : null,
+                r.Bio, r.Skills, r.Experience))
             .ToListAsync(ct);
 
         return new PagedResponseDto<JoinRequestResponseDto>(items, total, page, pageSize);
@@ -116,7 +133,8 @@ public class JoinRequestService : IJoinRequestService
            $"JoinRequest {request.Id} marked as {dto.Status} by user {reviewerId}", ct);
        
        return new JoinRequestResponseDto(request.Id, request.UserId, request.OrganizationId, request.Status,
-           request.CreatedAt , request.ReviewedAt , request.ReviewedByUserId );
+           request.CreatedAt , request.ReviewedAt , request.ReviewedByUserId,
+           null, null, request.Bio, request.Skills, request.Experience);
     }
 }
 

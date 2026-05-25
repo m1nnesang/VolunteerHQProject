@@ -17,12 +17,17 @@ public class UserController : BaseController
 
     [Authorize]
     [HttpGet("me")]
-        public async Task<IActionResult> GetMe()
-        { 
-            var userId = CurrentUserId;
-            var result = await _userService.GetMe(userId);
+    public async Task<IActionResult> GetMe()
+    {
+        var result = await _userService.GetMe(CurrentUserId);
+        return Ok(result);
+    }
 
-            return Ok(result);
-        }
-    
+    [Authorize]
+    [HttpGet("me/stats")]
+    public async Task<IActionResult> GetMyStats(CancellationToken ct)
+    {
+        var result = await _userService.GetMyStats(CurrentUserId, ct);
+        return Ok(result);
+    }
 }

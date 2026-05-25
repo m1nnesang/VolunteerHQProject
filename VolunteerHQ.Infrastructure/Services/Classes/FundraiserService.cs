@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using VolunteerHQ.Core.DTOs.Common;
 using VolunteerHQ.Core.DTOs.DonationDTOs;
 using VolunteerHQ.Core.DTOs.FundraiserDTOs;
@@ -15,12 +16,14 @@ public class FundraiserService : IFundraiserService
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs;
     private readonly INotificationService _ns;
+    private readonly ILogger<FundraiserService> _logger;
 
-    public FundraiserService(AppDbContext db, ValidatorService vs, INotificationService ns)
+    public FundraiserService(AppDbContext db, ValidatorService vs, INotificationService ns , ILogger<FundraiserService> logger)
     {
         _db = db;
         _vs = vs;
         _ns = ns;
+        _logger = logger;
     }
 
     public async Task<FundraiserResponseDto> CreateFundraiser(int unitId, CreateFundraiserDto dto, CancellationToken ct = default)
@@ -43,10 +46,34 @@ public class FundraiserService : IFundraiserService
         await _db.Fundraisers.AddAsync(fundraiser, ct);
         await _db.SaveChangesAsync(ct);
 
+        await NotifyUnitSubscribers(unitId, fundraiser.Id, fundraiser.Title, ct);
+
         return new FundraiserResponseDto(fundraiser.Id, fundraiser.MilitaryUnitId, fundraiser.Title,
             fundraiser.Description, fundraiser.TotalGoal, 0m, fundraiser.Importance,
             fundraiser.Status, new List<FundraiserAssignmentResponseDto>(),
             fundraiser.Deadline, fundraiser.CreatedAt);
+    }
+
+    private async Task NotifyUnitSubscribers(int unitId, int fundraiserId, string title, CancellationToken ct)
+    {
+        var subscriberIds = await _db.Subscriptions
+            .Where(s => s.Target == SubscriptionTargetType.MilitaryUnit && s.TargetId == unitId)
+            .Select(s => s.UserId)
+            .ToListAsync(ct);
+
+        foreach (var subscriberId in subscriberIds)
+        {
+            try
+            {
+                await _ns.SendNotification(subscriberId,
+                    $"Новий збір: {title}", $"/fundraiser/{fundraiserId}", ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to notify subscriber {UserId} about fundraiser {FundraiserId}",
+                    subscriberId, fundraiserId);
+            }
+        }
     }
 
     public async Task<FundraiserResponseDto> GetFundraiser(int fundraiserId, CancellationToken ct = default)
@@ -66,7 +93,8 @@ public class FundraiserService : IFundraiserService
         var assignments = fundraiser.Assignments
             .Select(a => new FundraiserAssignmentResponseDto(
                 a.Id, assignmentAmounts.GetValueOrDefault(a.Id, 0m),
-                a.OrganizationId, a.UniqueCode, a.TakenAt))
+                a.OrganizationId, a.Organization?.OrganizationName,
+                a.UniqueCode, a.TakenAt))
             .ToList();
 
         return new FundraiserResponseDto(fundraiser.Id, fundraiser.MilitaryUnitId, fundraiser.Title,
@@ -80,6 +108,7 @@ public class FundraiserService : IFundraiserService
 
         var fundraisers = await _db.Fundraisers
             .Include(f => f.Assignments)
+                .ThenInclude(a => a.Organization)
             .OrderByDescending(f => f.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -107,7 +136,8 @@ public class FundraiserService : IFundraiserService
             f.Assignments.Select(a => new FundraiserAssignmentResponseDto(
                 a.Id,
                 assignmentAmountMap.GetValueOrDefault(a.Id, 0m),
-                a.OrganizationId, a.UniqueCode, a.TakenAt)).ToList(),
+                a.OrganizationId, a.Organization?.OrganizationName,
+                a.UniqueCode, a.TakenAt)).ToList(),
             f.Deadline, f.CreatedAt)).ToList();
 
         return new PagedResponseDto<FundraiserResponseDto>(items, total, page, pageSize);
@@ -143,37 +173,38 @@ public class FundraiserService : IFundraiserService
         await _db.FundraiserAssignments.AddAsync(assignment, ct);
         await _db.SaveChangesAsync(ct);
 
+        var orgName = await _db.Organizations
+            .Where(o => o.Id == orgId)
+            .Select(o => o.OrganizationName)
+            .FirstOrDefaultAsync(ct);
+
         return new FundraiserAssignmentResponseDto(assignment.Id, 0m, assignment.OrganizationId,
-            assignment.UniqueCode, assignment.TakenAt);
+            orgName, assignment.UniqueCode, assignment.TakenAt);
     }
 
     public async Task<DonationResponseDto> Donate(int? userId, int fundraiserId , string uniqueCode, CreateDonationDto dto, CancellationToken ct = default)
     {
         var assignment = await _db.FundraiserAssignments
             .FirstOrDefaultAsync(a => a.UniqueCode == uniqueCode, ct);
-        
+
         if (assignment == null) throw new NotFoundException("This assignment not found");
-        
+
         var fundraiser = await _vs.GetFundraiserOrThrow(assignment.FundraiserId, ct);
-        
-        var donation = new DonationModel
-        {
-            FundraiserId = assignment.FundraiserId,
-            FundraiserAssignmentId = assignment.Id,
-            UserId = userId,
-            Amount = dto.Amount,
-            IsAnonymous = userId == null,
-            CreatedAt = DateTime.UtcNow
-        };
-        
-        await _db.Donations.AddAsync(donation, ct);
-        await _db.SaveChangesAsync(ct);
-        
+
+        var donation = await PersistDonationAsync(fundraiser, assignment.Id, userId, dto.Amount, ct);
+
         if (fundraiser.Status is not FundraiserStatus.Completed and not FundraiserStatus.Closed)
             await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
-        
-        if (userId != null)
-            await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);
+
+        try
+        {
+            if (userId != null)
+                await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);
+        }
+        catch
+        {
+            _logger.LogError("Notification service error");
+        }
 
         return new DonationResponseDto(donation.Id, donation.UserId, donation.Amount, donation.CreatedAt);
     }
@@ -182,27 +213,73 @@ public class FundraiserService : IFundraiserService
     {
         var fundraiser = await _vs.GetFundraiserOrThrow(fundraiserId, ct);
 
-        var donation = new DonationModel
-        {
-            FundraiserId = fundraiserId,
-            FundraiserAssignmentId = null,
-            UserId = userId,
-            Amount = dto.Amount,
-            IsAnonymous = userId == null,
-            CreatedAt = DateTime.UtcNow
-        };
+        var donation = await PersistDonationAsync(fundraiser, null, userId, dto.Amount, ct);
 
-        await _db.Donations.AddAsync(donation, ct);
-        await _db.SaveChangesAsync(ct);
-        
         if (fundraiser.Status is not FundraiserStatus.Completed and not FundraiserStatus.Closed)
             await UpdateFundraiserStatus(fundraiser.Id, fundraiser.TotalGoal, ct);
-        
-        if (userId != null)
-            await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);
+
+        try
+        {
+            if (userId != null)
+                await _ns.SendNotification(userId.Value, "Дякуємо за ваш донат!", $"/fundraiser/{fundraiserId}", ct);
+        }
+        catch
+        {
+            _logger.LogError("Notification service error");
+        }
 
         return new DonationResponseDto(donation.Id, donation.UserId, donation.Amount, donation.CreatedAt);
-        
+    }
+    
+    private async Task<DonationModel> PersistDonationAsync(
+        FundraiserModel fundraiser, int? assignmentId, int? userId, decimal requestedAmount, CancellationToken ct)
+    {
+        var isRelational = _db.Database.IsRelational();
+
+        var transaction = isRelational
+            ? await _db.Database.BeginTransactionAsync(ct)
+            : null;
+
+        try
+        {
+            if (isRelational)
+                await _db.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT 1 FROM \"Fundraisers\" WHERE \"Id\" = {fundraiser.Id} FOR UPDATE", ct);
+
+            var currentProgress = await _db.Donations
+                .Where(d => d.FundraiserId == fundraiser.Id)
+                .SumAsync(d => (decimal?)d.Amount, ct) ?? 0m;
+
+            var remaining = fundraiser.TotalGoal - currentProgress;
+
+            if (remaining <= 0)
+                throw new ConflictException("Збір вже виконано");
+
+            var actualAmount = Math.Min(requestedAmount, remaining);
+
+            var donation = new DonationModel
+            {
+                FundraiserId = fundraiser.Id,
+                FundraiserAssignmentId = assignmentId,
+                UserId = userId,
+                Amount = actualAmount,
+                IsAnonymous = userId == null,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _db.Donations.AddAsync(donation, ct);
+            await _db.SaveChangesAsync(ct);
+
+            if (transaction != null)
+                await transaction.CommitAsync(ct);
+
+            return donation;
+        }
+        finally
+        {
+            if (transaction != null)
+                await transaction.DisposeAsync();
+        }
     }
 
     private async Task UpdateFundraiserStatus(int fundraiserId, decimal totalGoal, CancellationToken ct)
@@ -211,20 +288,17 @@ public class FundraiserService : IFundraiserService
             .Where(d => d.FundraiserId == fundraiserId)
             .SumAsync(d => d.Amount, ct);
 
-        var currentStatus = await _db.Fundraisers
-            .Where(f => f.Id == fundraiserId)
-            .Select(f => f.Status).FirstAsync(ct);
-        
-        if (currentStatus == FundraiserStatus.Completed) return; // save from RC in status update
-        
+        var fundraiser = await _db.Fundraisers
+            .FirstAsync(f => f.Id == fundraiserId, ct);
+
+        if (fundraiser.Status == FundraiserStatus.Completed) return; // save from RC in status update
+
         var newStatus = progress >= totalGoal
             ? FundraiserStatus.Completed
             : FundraiserStatus.InProgress;
-        
 
-        await _db.Fundraisers
-            .Where(f => f.Id == fundraiserId)
-            .ExecuteUpdateAsync(s => s.SetProperty(f => f.Status, newStatus), ct);
+        fundraiser.Status = newStatus;
+        await _db.SaveChangesAsync(ct);
 
         if (newStatus == FundraiserStatus.Completed)
         {

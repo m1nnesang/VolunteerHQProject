@@ -14,3 +14,12 @@ obj/
 # Environment
 *.env
 appsettings.Development.json
+appsettings.Local.json
+
+# Node
+node_modules/
+package-lock.json
+
+# Build artifacts (local working dirs for presentation/docx)
+.pptx_build/
+.docx_build/

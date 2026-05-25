@@ -14,12 +14,16 @@ public class NotificationService : INotificationService
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs;
     private readonly IEmailService _es;
-    
-    public NotificationService(AppDbContext db , ValidatorService vs , IEmailService es)
+    private readonly ILogger<NotificationService> _logger;
+    private readonly IRealtimeNotifier _rt;
+
+    public NotificationService(AppDbContext db , ValidatorService vs , IEmailService es , ILogger<NotificationService> logger , IRealtimeNotifier rt)
     {
         _db = db;
         _vs = vs;
         _es = es;
+        _logger = logger;
+        _rt = rt;
     }
 
     public async Task<PagedResponseDto<NotificationResponseDto>> GetNotifications(int userId, PaginationDto pagination,
@@ -55,7 +59,25 @@ public class NotificationService : INotificationService
         await _db.Notifications.AddAsync(notification, ct);
         await _db.SaveChangesAsync(ct);
 
-        await _es.SendAsync(user.Email, text , link, ct);
+        try
+        {
+            await _rt.SendNotification(userId, new NotificationResponseDto(
+                notification.Id, notification.UserId, notification.Text,
+                notification.Link, notification.IsRead, notification.SentAt), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to push realtime notification to user {UserId}", userId);
+        }
+
+        try
+        {
+            await _es.SendAsync(user.Email, text , link, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email notification to {Email}", user.Email);
+        }
     }
     
     public async Task MarkAsRead(int userId, int notificationId, CancellationToken ct = default)

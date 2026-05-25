@@ -1,3 +1,5 @@
-﻿namespace VolunteerHQ.Core.DTOs.OrganizationDTOs;
+﻿using VolunteerHQ.Core.DTOs.MembershipDTOs;
 
-public record OrganizationResponseDto(int Id, string Name , string City , string Description , DateTime CreatedAt);
+namespace VolunteerHQ.Core.DTOs.OrganizationDTOs;
+
+public record OrganizationResponseDto(int Id, string Name, string City, string Description, DateTime CreatedAt, List<MembershipResponseDto> Members);

@@ -10,6 +10,5 @@ public class CreateJoinRequestDtoValidator : AbstractValidator<CreateJoinRequest
         RuleFor(x => x.Bio).NotEmpty().WithMessage("Біографія не може бути порожньою");
         RuleFor(x => x.Skills).NotEmpty().WithMessage("Навички не можуть бути порожніми");
         RuleFor(x => x.Experience).NotEmpty().WithMessage("Досвід не може бути порожнім");
-        RuleFor(x => x.CvFilePath).NotEmpty().WithMessage("Шлях до CV не може бути порожнім");
     }
 }

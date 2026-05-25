@@ -21,7 +21,11 @@ public class OrganizationController : BaseController
     [HttpGet("{orgId}")]
     public async Task<IActionResult> GetOrganization(int orgId, CancellationToken ct = default)
     {
-        var org = await _orgService.GetOrganization(orgId, ct);
+        var requesterId = User.Identity?.IsAuthenticated == true
+            ? CurrentUserId
+            : (int?)null;
+
+        var org = await _orgService.GetOrganization(orgId, requesterId, ct);
         return Ok(org);
     }
 
@@ -30,6 +34,21 @@ public class OrganizationController : BaseController
     {
         var members = await _orgService.GetOrganizationMembers(orgId, pagination.Page, pagination.PageSize, ct);
         return Ok(members);
+    }
+
+    [Authorize]
+    [HttpGet("my-managed")]
+    public async Task<IActionResult> GetMyManagedOrg(CancellationToken ct = default)
+    {
+        var orgId = await _orgService.GetManagedOrgId(CurrentUserId, ct);
+        return Ok(new { orgId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] PaginationDto pagination, CancellationToken ct = default)
+    {
+        var result = await _orgService.GetAllOrganizations(pagination.Page, pagination.PageSize, ct);
+        return Ok(result);
     }
 
     [Authorize]

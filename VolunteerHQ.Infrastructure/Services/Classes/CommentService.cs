@@ -35,25 +35,35 @@ public class CommentService : ICommentService
         
         await _db.AddAsync(message, ct);
         await _db.SaveChangesAsync(ct);
-        
-        return new CommentResponseDto(message.Id, message.UserId, message.FundraiserId, message.Text, message.CreatedAt);
+
+        var user = await _vs.GetUserByIdOrThrow(userId, ct);
+
+        return new CommentResponseDto(message.Id, message.UserId, user.FirstName, user.SecondName, message.FundraiserId, message.Text, message.CreatedAt);
     }
-    
+
     public async Task<PagedResponseDto<CommentResponseDto>> GetCommentsByFundraiser(int fundraiserId, PaginationDto pagination,
         CancellationToken ct = default)
     {
         await _vs.GetFundraiserOrThrow(fundraiserId, ct);
-        
+
         var total = await _db.Comments.CountAsync(c => c.FundraiserId == fundraiserId, ct);
 
         var items = await _db.Comments
             .Where(c => c.FundraiserId == fundraiserId)
+            .OrderByDescending(c => c.CreatedAt)
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
             .AsNoTracking()
-            .Select(c => new CommentResponseDto(c.Id, c.UserId, c.FundraiserId, c.Text, c.CreatedAt))
+            .Select(c => new CommentResponseDto(
+                c.Id,
+                c.UserId,
+                c.User != null ? c.User.FirstName : null,
+                c.User != null ? c.User.SecondName : null,
+                c.FundraiserId,
+                c.Text,
+                c.CreatedAt))
             .ToListAsync(ct);
-        
+
         return new PagedResponseDto<CommentResponseDto>(items, total, pagination.Page, pagination.PageSize);
     }
 

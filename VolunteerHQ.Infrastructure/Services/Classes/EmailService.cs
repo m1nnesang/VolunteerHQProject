@@ -24,10 +24,8 @@ public class EmailService :  IEmailService
 
         var bodyBuilder = new BodyBuilder
         {
-            HtmlBody = body,
+            HtmlBody = body
         };
-        
-        message.Body = bodyBuilder.ToMessageBody();
         
         message.Body = bodyBuilder.ToMessageBody();
 

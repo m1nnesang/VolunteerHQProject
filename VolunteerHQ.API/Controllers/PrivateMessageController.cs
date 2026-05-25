@@ -29,6 +29,16 @@ public class PrivateMessageController : BaseController
         return Ok(result);
     }
 
+    [HttpGet("conversations")]
+    [Authorize]
+    public async Task<IActionResult> GetConversations(CancellationToken ct = default)
+    {
+        var userId = CurrentUserId;
+
+        var result = await _privateMessageService.GetConversations(userId, ct);
+        return Ok(result);
+    }
+
     [HttpGet("{otherUserId}")]
     [Authorize]
     public async Task<IActionResult> Get(int otherUserId , [FromQuery] PaginationDto pagination, CancellationToken ct = default)

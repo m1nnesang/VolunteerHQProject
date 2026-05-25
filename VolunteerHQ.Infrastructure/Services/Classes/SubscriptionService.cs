@@ -44,8 +44,24 @@ public class SubscriptionService : ISubscriptionService
 
         await _db.AddAsync(subscribe, ct);
         await _db.SaveChangesAsync(ct);
-        
-        return new SubscriptionResponseDto(subscribe.Id, subscribe.UserId, subscribe.Target, subscribe.TargetId, subscribe.SubscribedAt);
+
+        var targetName = await GetTargetName(subscribe.Target, subscribe.TargetId, ct);
+
+        return new SubscriptionResponseDto(subscribe.Id, subscribe.UserId, subscribe.Target, subscribe.TargetId, targetName, subscribe.SubscribedAt);
+    }
+
+    private async Task<string?> GetTargetName(SubscriptionTargetType target, int targetId, CancellationToken ct)
+    {
+        if (target == SubscriptionTargetType.Organization)
+            return await _db.Organizations
+                .Where(o => o.Id == targetId)
+                .Select(o => o.OrganizationName)
+                .FirstOrDefaultAsync(ct);
+
+        return await _db.MilitaryUnits
+            .Where(u => u.Id == targetId)
+            .Select(u => u.IsNameHidden ? "********" : u.UnitName)
+            .FirstOrDefaultAsync(ct);
     }
     
     public async Task Unsubscribe(int userId, int subscriptionId, CancellationToken ct)
@@ -64,14 +80,34 @@ public class SubscriptionService : ISubscriptionService
         CancellationToken ct = default)
     {
         var total = await _db.Subscriptions.CountAsync(s => s.UserId == userId, ct);
-        
+
         var subscriptions = await _db.Subscriptions
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.SubscribedAt)
             .Skip((dto.Page - 1) * dto.PageSize)
             .Take(dto.PageSize)
+            .AsNoTracking()
             .ToListAsync(ct);
-        
-        return new PagedResponseDto<SubscriptionResponseDto>(subscriptions.Select(s => new SubscriptionResponseDto(s.Id, s.UserId, s.Target, s.TargetId, s.SubscribedAt)).ToList(), total, dto.Page, dto.PageSize);
+
+        var orgIds = subscriptions.Where(s => s.Target == SubscriptionTargetType.Organization).Select(s => s.TargetId).ToList();
+        var unitIds = subscriptions.Where(s => s.Target == SubscriptionTargetType.MilitaryUnit).Select(s => s.TargetId).ToList();
+
+        var orgNames = await _db.Organizations
+            .Where(o => orgIds.Contains(o.Id))
+            .ToDictionaryAsync(o => o.Id, o => o.OrganizationName, ct);
+
+        var unitNames = await _db.MilitaryUnits
+            .Where(u => unitIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.IsNameHidden ? "********" : u.UnitName, ct);
+
+        var items = subscriptions.Select(s => new SubscriptionResponseDto(
+            s.Id, s.UserId, s.Target, s.TargetId,
+            s.Target == SubscriptionTargetType.Organization
+                ? orgNames.GetValueOrDefault(s.TargetId)
+                : unitNames.GetValueOrDefault(s.TargetId),
+            s.SubscribedAt
+        )).ToList();
+
+        return new PagedResponseDto<SubscriptionResponseDto>(items, total, dto.Page, dto.PageSize);
     }
 }

@@ -13,11 +13,36 @@ public class PrivateMessageService : IPrivateMessageService
 {
     private readonly AppDbContext _db;
     private readonly ValidatorService _vs;
-    
-    public PrivateMessageService(AppDbContext db , ValidatorService vs)
+    private readonly IRealtimeNotifier _rt;
+
+    public PrivateMessageService(AppDbContext db , ValidatorService vs , IRealtimeNotifier rt)
     {
         _db = db;
         _vs = vs;
+        _rt = rt;
+    }
+
+    public async Task<List<ConversationDto>> GetConversations(int userId, CancellationToken ct = default)
+    {
+        var messages = await _db.PrivateMessages
+            .Where(m => m.SenderId == userId || m.ReceiverId == userId)
+            .OrderByDescending(m => m.SentAt)
+            .AsNoTracking()
+            .ToListAsync(ct);
+
+        var conversations = messages
+            .GroupBy(m => m.SenderId == userId ? m.ReceiverId : m.SenderId)
+            .Where(g => g.Key != null)
+            .Select(g =>
+            {
+                var last = g.First();
+                var unread = g.Count(m => m.ReceiverId == userId && !m.IsRead);
+                return new ConversationDto(g.Key!.Value, last.Text, last.SentAt, unread);
+            })
+            .OrderByDescending(c => c.LastMessageAt)
+            .ToList();
+
+        return conversations;
     }
 
     public async Task<PrivateMessageResponseDto> SendMessage(int senderId,  CreatePrivateMessageDto dto, CancellationToken ct = default)
@@ -36,8 +61,13 @@ public class PrivateMessageService : IPrivateMessageService
         
         _db.PrivateMessages.Add(message);
         await _db.SaveChangesAsync(ct);
-        
-        return new PrivateMessageResponseDto(message.Id, message.SenderId, message.ReceiverId, message.Text, message.IsRead, message.IsEdited, message.SentAt);
+
+        var response = new PrivateMessageResponseDto(message.Id, message.SenderId, message.ReceiverId, message.Text, message.IsRead, message.IsEdited, message.SentAt);
+
+        await _rt.SendMessage(dto.ReceiverId, response, ct);
+        await _rt.SendMessage(senderId, response, ct);
+
+        return response;
     }
 
     public async Task<PagedResponseDto<PrivateMessageResponseDto>> GetMessages(int userId, int otherUserId, PaginationDto pagination, CancellationToken ct = default)
@@ -50,7 +80,7 @@ public class PrivateMessageService : IPrivateMessageService
             .CountAsync(ct);
         
         var items = await query
-            .OrderBy(m => m.SentAt)
+            .OrderByDescending(m => m.SentAt)
             .Skip((pagination.Page - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
             .AsNoTracking()
