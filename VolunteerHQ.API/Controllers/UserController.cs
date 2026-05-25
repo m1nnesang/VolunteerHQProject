@@ -1,30 +1,33 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using VolunteerHQ.Core.DTOs.UserDTOs;
-using VolunteerHQ.Infrastructure.Services;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
 namespace VolunteerHQ.API.Controllers;
 
 [ApiController]
-[Route("/api[controller]")]
-public class UserController : ControllerBase
+[Route("api/[controller]")]
+public class UserController : BaseController
 {
-    private readonly UserService _userService;
+    private readonly IUserService _userService;
 
-    public UserController(UserService userService)
+    public UserController(IUserService userService)
     {
         _userService = userService;
     }
 
     [Authorize]
     [HttpGet("me")]
-        public async Task<IActionResult> GetMe()
-        { 
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
-            var result = await _userService.GetMe(userId);
+    public async Task<IActionResult> GetMe()
+    {
+        var result = await _userService.GetMe(CurrentUserId);
+        return Ok(result);
+    }
 
-            return Ok(result);
-        }
-    
+    [Authorize]
+    [HttpGet("me/stats")]
+    public async Task<IActionResult> GetMyStats(CancellationToken ct)
+    {
+        var result = await _userService.GetMyStats(CurrentUserId, ct);
+        return Ok(result);
+    }
 }

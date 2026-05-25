@@ -1,11 +1,19 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using VolunteerHQ.API.Middleware;
+using VolunteerHQ.API.Hubs;
 using VolunteerHQ.Infrastructure.Data;
-using VolunteerHQ.Infrastructure.Services;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using VolunteerHQ.API.Validators;
+using VolunteerHQ.Core.Settings;
+using VolunteerHQ.Infrastructure.Services.Classes;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
 
 #region build
 var builder = WebApplication.CreateBuilder(args);
@@ -29,11 +37,67 @@ builder.Services.AddAuthentication("Bearer").AddJwtBearer(options =>
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
     };
+
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                context.Token = accessToken;
+
+            return Task.CompletedTask;
+        }
+    };
 });
+
+builder.Services.AddSignalR();
+
+builder.Services.AddHttpClient<NovaPoshtaService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
+builder.Services.AddFluentValidationAutoValidation();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    // Общий лимит — 60 запросов в минуту
+    options.AddFixedWindowLimiter("global", opt =>
+    {
+        opt.PermitLimit = 60;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // Жёсткий лимит для логина — 5 запросов в минуту
+    options.AddFixedWindowLimiter("login", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    options.RejectionStatusCode = 429;
+});
 #endregion
 
 #region Swagger
@@ -67,10 +131,25 @@ builder.Services.AddSwaggerGen(options =>
 #endregion
 
 #region Scoped
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ValidatorService>();
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+builder.Services.AddScoped<IJoinRequestService , JoinRequestService>();
+builder.Services.AddScoped<IOrganizationRequestService, OrganizationRequestService>();
+builder.Services.AddScoped<IMilitaryUnitService , MilitaryUnitService>();
+builder.Services.AddScoped<IFundraiserService , FundraiserService>();
+builder.Services.AddScoped<IPrivateMessageService , PrivateMessageService>();
+builder.Services.AddScoped<ICommentService , CommentService>();
+builder.Services.AddScoped<INotificationService , NotificationService>();
+builder.Services.AddScoped<ISubscriptionService , SubscriptionService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddScoped<IRealtimeNotifier, SignalRNotifier>();
 #endregion
-
+ 
 #region app
 var app = builder.Build();
 
@@ -82,9 +161,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 app.Run();
 #endregion

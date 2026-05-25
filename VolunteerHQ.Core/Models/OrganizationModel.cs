@@ -10,6 +10,8 @@ public class OrganizationModel
     public required string Description { get; set; }
     #endregion
     
+    public ICollection<OrganizationMembershipModel> Memberships { get; set; } 
+        = new List<OrganizationMembershipModel>(); // navigation prop for 1 transaction in create
     public DateTime CreatedAt { get; set; }
     
 }

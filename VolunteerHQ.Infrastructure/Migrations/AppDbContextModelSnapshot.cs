@@ -103,7 +103,7 @@ namespace VolunteerHQ.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("FundraiserAssignmentId")
+                    b.Property<int?>("FundraiserAssignmentId")
                         .HasColumnType("integer");
 
                     b.Property<int>("FundraiserId")
@@ -133,10 +133,6 @@ namespace VolunteerHQ.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AmountRaised")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
 
                     b.Property<int>("FundraiserId")
                         .HasColumnType("integer");
@@ -173,10 +169,6 @@ namespace VolunteerHQ.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("CurrentProgress")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
 
                     b.Property<DateOnly>("Deadline")
                         .HasColumnType("date");
@@ -228,7 +220,7 @@ namespace VolunteerHQ.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Motivation")
+                    b.Property<string>("Experience")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -356,7 +348,8 @@ namespace VolunteerHQ.Infrastructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "OrganizationId")
+                        .IsUnique();
 
                     b.ToTable("OrganizationMemberships");
                 });
@@ -423,24 +416,15 @@ namespace VolunteerHQ.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("ProposedName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Purpose")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ReviewedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("SecondName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int?>("ReviewedByUserId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Skills")
                         .IsRequired()
@@ -467,6 +451,9 @@ namespace VolunteerHQ.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
@@ -487,9 +474,38 @@ namespace VolunteerHQ.Infrastructure.Migrations
 
                     b.HasIndex("ReceiverId");
 
-                    b.HasIndex("SenderId");
+                    b.HasIndex("SenderId", "ReceiverId", "SentAt");
 
                     b.ToTable("PrivateMessages");
+                });
+
+            modelBuilder.Entity("VolunteerHQ.Core.Models.RefreshTokenModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefreshToken");
                 });
 
             modelBuilder.Entity("VolunteerHQ.Core.Models.ReportModel", b =>
@@ -687,9 +703,7 @@ namespace VolunteerHQ.Infrastructure.Migrations
                 {
                     b.HasOne("VolunteerHQ.Core.Models.FundraiserAssignmentModel", "FundraiserAssignment")
                         .WithMany()
-                        .HasForeignKey("FundraiserAssignmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FundraiserAssignmentId");
 
                     b.HasOne("VolunteerHQ.Core.Models.FundraiserModel", "Fundraiser")
                         .WithMany()
@@ -711,7 +725,7 @@ namespace VolunteerHQ.Infrastructure.Migrations
             modelBuilder.Entity("VolunteerHQ.Core.Models.FundraiserAssignmentModel", b =>
                 {
                     b.HasOne("VolunteerHQ.Core.Models.FundraiserModel", "Fundraiser")
-                        .WithMany()
+                        .WithMany("Assignments")
                         .HasForeignKey("FundraiserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -777,7 +791,7 @@ namespace VolunteerHQ.Infrastructure.Migrations
             modelBuilder.Entity("VolunteerHQ.Core.Models.OrganizationMembershipModel", b =>
                 {
                     b.HasOne("VolunteerHQ.Core.Models.OrganizationModel", "Organization")
-                        .WithMany()
+                        .WithMany("Memberships")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -858,6 +872,16 @@ namespace VolunteerHQ.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("VolunteerHQ.Core.Models.FundraiserModel", b =>
+                {
+                    b.Navigation("Assignments");
+                });
+
+            modelBuilder.Entity("VolunteerHQ.Core.Models.OrganizationModel", b =>
+                {
+                    b.Navigation("Memberships");
                 });
 
             modelBuilder.Entity("VolunteerHQ.Core.Models.UserModel", b =>

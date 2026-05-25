@@ -7,7 +7,7 @@ public class DonationModel
     public int FundraiserId { get; set; }
     public FundraiserModel? Fundraiser { get; set; }
     
-    public int FundraiserAssignmentId { get; set; }
+    public int? FundraiserAssignmentId { get; set; }
     public FundraiserAssignmentModel? FundraiserAssignment { get; set; }
     
     public int? UserId { get; set; }

@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<NotificationModel> Notifications { get; set; }
     public DbSet<ReportModel> Reports { get; set; }
     public DbSet<AuditLogModel> AuditLogs { get; set; }
+    public DbSet<RefreshTokenModel> RefreshToken { get; set; }
     #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -39,23 +40,19 @@ public class AppDbContext : DbContext
             .HasIndex(m => m.Login)
             .IsUnique();
 
+        modelBuilder.Entity<OrganizationMembershipModel>()
+            .HasIndex(m => new { m.UserId, m.OrganizationId })
+            .IsUnique();
+
         #region FundraiserAssignmentModel
         modelBuilder.Entity<FundraiserAssignmentModel>()
             .HasIndex(f => f.UniqueCode)
             .IsUnique();
-
-        modelBuilder.Entity<FundraiserAssignmentModel>()
-            .Property(f => f.AmountRaised)
-            .HasPrecision(18, 2);
         #endregion
         
         #region FundraiserModel
         modelBuilder.Entity<FundraiserModel>()
             .Property(f => f.TotalGoal)
-            .HasPrecision(18, 2);
-
-        modelBuilder.Entity<FundraiserModel>()
-            .Property(f => f.CurrentProgress)
             .HasPrecision(18, 2);
         #endregion
 
@@ -113,6 +110,18 @@ public class AppDbContext : DbContext
             .HasOne(v => v.User)
             .WithOne(u => u.VolunteerProfile)
             .HasForeignKey<VolunteerProfileModel>(v => v.UserId);
+        
+        modelBuilder.Entity<CommentModel>()
+            .HasIndex(c => c.FundraiserId);
+
+        modelBuilder.Entity<DonationModel>()
+            .HasIndex(d => d.FundraiserId);
+
+        modelBuilder.Entity<JoinRequestModel>()
+            .HasIndex(j => j.OrganizationId);
+
+        modelBuilder.Entity<PrivateMessageModel>()
+            .HasIndex(m => new { m.SenderId, m.ReceiverId, m.SentAt });
 
 
     }

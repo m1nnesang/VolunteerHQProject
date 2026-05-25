@@ -1,0 +1,60 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using VolunteerHQ.Core.DTOs.Common;
+using VolunteerHQ.Core.DTOs.OrganizationRequestDTOs;
+using VolunteerHQ.Infrastructure.Services.Interfaces;
+
+namespace VolunteerHQ.API.Controllers;
+
+
+[ApiController]
+[Route("api/[controller]")]
+public class OrganizationRequestController : BaseController
+{
+    
+    private readonly IOrganizationRequestService _orgReqService;
+
+    public OrganizationRequestController(IOrganizationRequestService orgReqService)
+    {
+        _orgReqService = orgReqService;
+    }
+    
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> CreateRequest([FromBody] CreateOrganizationRequestDto dto, CancellationToken ct = default )
+    {
+        var userId = CurrentUserId;
+        var result = await _orgReqService.CreateRequest(userId, dto, ct);
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("{requestId}")]
+    public async Task<IActionResult> GetRequest(int requestId , CancellationToken ct = default)
+    {
+        var userId = CurrentUserId;
+        var result = await _orgReqService.GetCreateRequest(userId, requestId , ct);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllRequests([FromQuery] PaginationDto pagination, CancellationToken ct = default)
+    {
+        var userId = CurrentUserId;
+        var result = await _orgReqService.GetAllRequests(userId, pagination.Page, pagination.PageSize, ct);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPut("{requestId}/review")]
+    public async Task<IActionResult> ReviewRequest(int requestId ,  [FromBody] ReviewOrganizationRequestDto dto, CancellationToken ct = default)
+    {
+        var userId = CurrentUserId;
+        var result = await _orgReqService.ReviewOrganizationRequest(userId, requestId, dto , ct);
+
+        return Ok(result);
+    }
+}
