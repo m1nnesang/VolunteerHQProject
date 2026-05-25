@@ -6,11 +6,11 @@
 
 ## Структура рішення
 
-- **VolunteerHQ.Core** — доменні моделі, DTO, enum-и, винятки (без зовнішніх залежностей)
-- **VolunteerHQ.Infrastructure** — сервіси (бізнес-логіка), `AppDbContext`, реалізація realtime-нотифікатора
-- **VolunteerHQ.API** — REST-контролери, middleware, SignalR-хаб (`/hubs/chat`)
-- **VolunteerHQ.Tests** — модульні тести (xUnit + FluentAssertions + Moq + EF Core InMemory)
-- **VolunteerHQ.Client** — React-фронтенд (SPA)
+- **VolunteerHQ.Core** - доменні моделі, DTO, enum-и, винятки (без зовнішніх залежностей)
+- **VolunteerHQ.Infrastructure** - сервіси (бізнес-логіка), `AppDbContext`, реалізація realtime-нотифікатора
+- **VolunteerHQ.API** - REST-контролери, middleware, SignalR-хаб (`/hubs/chat`)
+- **VolunteerHQ.Tests** - модульні тести (xUnit + FluentAssertions + Moq + EF Core InMemory)
+- **VolunteerHQ.Client** - React-фронтенд (SPA)
 
 ## ER Diagram
 
@@ -234,7 +234,7 @@ erDiagram
 
 ### Примітки до моделі даних
 
-- **`Fundraiser.CurrentProgress`** і **`FundraiserAssignment.AmountRaised`** не зберігаються в БД — обчислюються на льоту як `SUM(Donations.Amount)`. Це усуває розсинхрон між зведеними сумами та реальними записами донатів.
-- **`Donation.UserId`** і **`Donation.FundraiserAssignmentId`** — nullable: донат можна зробити анонімно та/або без прив'язки до конкретної організації (прямий донат на сторінці збору).
-- **`PrivateMessage.SenderId`** та **`ReceiverId`** — nullable з `OnDelete(SetNull)`: видалення користувача не каскадно знищує всю історію його повідомлень.
-- **`RefreshToken.IsRevoked`** — при кожному оновленні access-токена старий refresh інвалідується (ротація).
+- **`Fundraiser.CurrentProgress`** і **`FundraiserAssignment.AmountRaised`** не зберігаються в БД - обчислюються на льоту як `SUM(Donations.Amount)`. Це усуває розсинхрон між зведеними сумами та реальними записами донатів.
+- **`Donation.UserId`** і **`Donation.FundraiserAssignmentId`** - nullable: донат можна зробити анонімно та/або без прив'язки до конкретної організації (прямий донат на сторінці збору).
+- **`PrivateMessage.SenderId`** та **`ReceiverId`** - nullable з `OnDelete(SetNull)`: видалення користувача не каскадно знищує всю історію його повідомлень.
+- **`RefreshToken.IsRevoked`** - при кожному оновленні access-токена старий refresh інвалідується (ротація).
