@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: volunteerhq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-volunteerhq}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d volunteerhq"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: VolunteerHQ.API/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=volunteerhq;Username=postgres;Password=${POSTGRES_PASSWORD:-volunteerhq}
+      ApplyMigrationsOnStartup: "true"
+      Jwt__Key: ${JWT_KEY:-local-demo-jwt-signing-key-change-me-0123456789}
+      Jwt__Issuer: VolunteerHQ
+      Jwt__Audience: VolunteerHQ
+      Jwt__ExpiresInMinutes: "60"
+      EmailSettings__Username: ${SMTP_USERNAME:-}
+      EmailSettings__Password: ${SMTP_PASSWORD:-}
+      NovaPoshta__ApiKey: ${NOVAPOSHTA_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./VolunteerHQ.Client
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
