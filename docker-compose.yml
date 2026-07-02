@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: volunteerhq
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: volunteerhq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-volunteerhq}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -19,12 +19,15 @@ services:
       dockerfile: VolunteerHQ.API/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=volunteerhq;Username=postgres;Password=volunteerhq
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=volunteerhq;Username=postgres;Password=${POSTGRES_PASSWORD:-volunteerhq}
       ApplyMigrationsOnStartup: "true"
-      Jwt__Key: local-demo-jwt-signing-key-change-me-0123456789
+      Jwt__Key: ${JWT_KEY:-local-demo-jwt-signing-key-change-me-0123456789}
       Jwt__Issuer: VolunteerHQ
       Jwt__Audience: VolunteerHQ
       Jwt__ExpiresInMinutes: "60"
+      EmailSettings__Username: ${SMTP_USERNAME:-}
+      EmailSettings__Password: ${SMTP_PASSWORD:-}
+      NovaPoshta__ApiKey: ${NOVAPOSHTA_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

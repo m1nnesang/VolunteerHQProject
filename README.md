@@ -36,7 +36,23 @@ What runs inside:
 | `api` | ASP.NET Core 10 | REST API + SignalR hub |
 | `db` | PostgreSQL 17 | Database (data persists in the `pgdata` volume) |
 
-> Email notifications are disabled in the Docker setup (no SMTP credentials are shipped). Everything else works out of the box.
+### Configuration (optional)
+
+The stack starts with safe defaults — no configuration is required. To override secrets (SMTP credentials for email notifications, Nova Poshta API key, JWT signing key, database password), copy the example env file and fill in the values:
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `POSTGRES_PASSWORD` | Database password | `volunteerhq` |
+| `JWT_KEY` | JWT signing key | local demo key |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | Gmail SMTP credentials for email notifications | empty (emails silently skipped) |
+| `NOVAPOSHTA_API_KEY` | Nova Poshta API key | empty |
+
+`.env` is gitignored — secrets never land in the repository.
 
 ## Solution Structure
 
