@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+.git/
+.idea/
+.claude/
+.pptx_build/
+VolunteerHQ.API/appsettings.Local.json
+VolunteerHQ.API/appsettings.Development.json

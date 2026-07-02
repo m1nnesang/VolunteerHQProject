@@ -153,6 +153,12 @@ builder.Services.AddScoped<IRealtimeNotifier, SignalRNotifier>();
 #region app
 var app = builder.Build();
 
+if (app.Configuration.GetValue<bool>("ApplyMigrationsOnStartup"))
+{
+    using var scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+}
+
 app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
