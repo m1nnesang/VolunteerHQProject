@@ -1,16 +1,16 @@
 # VolunteerHQ
 
-Веб-платформа для координації волонтерів, волонтерських організацій та військових підрозділів навколо зборів коштів.
+A web platform for coordinating volunteers, volunteer organizations, and military units around fundraisers.
 
-**Стек:** ASP.NET Core 10 · Entity Framework Core 10 · PostgreSQL · SignalR · React (Vite) · Tailwind CSS
+**Stack:** ASP.NET Core 10 · Entity Framework Core 10 · PostgreSQL · SignalR · React (Vite) · Tailwind CSS
 
-## Структура рішення
+## Solution Structure
 
-- **VolunteerHQ.Core** - доменні моделі, DTO, enum-и, винятки (без зовнішніх залежностей)
-- **VolunteerHQ.Infrastructure** - сервіси (бізнес-логіка), `AppDbContext`, реалізація realtime-нотифікатора
-- **VolunteerHQ.API** - REST-контролери, middleware, SignalR-хаб (`/hubs/chat`)
-- **VolunteerHQ.Tests** - модульні тести (xUnit + FluentAssertions + Moq + EF Core InMemory)
-- **VolunteerHQ.Client** - React-фронтенд (SPA)
+- **VolunteerHQ.Core** - domain models, DTOs, enums, exceptions (no external dependencies)
+- **VolunteerHQ.Infrastructure** - services (business logic), `AppDbContext`, realtime notifier implementation
+- **VolunteerHQ.API** - REST controllers, middleware, SignalR hub (`/hubs/chat`)
+- **VolunteerHQ.Tests** - unit tests (xUnit + FluentAssertions + Moq + EF Core InMemory)
+- **VolunteerHQ.Client** - React frontend (SPA)
 
 ## ER Diagram
 
@@ -219,9 +219,9 @@ erDiagram
     User ||--o{ RefreshToken : "owns"
 ```
 
-### Пояснення до полів-enum
+### Enum field explanations
 
-| Поле | Enum | Значення |
+| Field | Enum | Values |
 |---|---|---|
 | `User.Role` | `UserRoles` | User, Volunteer, Admin |
 | `OrganizationMembership.MemberRole` | `OrganizationMemberRole` | Leader, Deputy, Member |
@@ -232,9 +232,9 @@ erDiagram
 | `Report.Category` | `ReportCategory` | Spam, Abuse, Fraud, Other |
 | `Report.Status` | `ReportStatus` | Pending, Reviewed, Dismissed |
 
-### Примітки до моделі даних
+### Data model notes
 
-- **`Fundraiser.CurrentProgress`** і **`FundraiserAssignment.AmountRaised`** не зберігаються в БД - обчислюються на льоту як `SUM(Donations.Amount)`. Це усуває розсинхрон між зведеними сумами та реальними записами донатів.
-- **`Donation.UserId`** і **`Donation.FundraiserAssignmentId`** - nullable: донат можна зробити анонімно та/або без прив'язки до конкретної організації (прямий донат на сторінці збору).
-- **`PrivateMessage.SenderId`** та **`ReceiverId`** - nullable з `OnDelete(SetNull)`: видалення користувача не каскадно знищує всю історію його повідомлень.
-- **`RefreshToken.IsRevoked`** - при кожному оновленні access-токена старий refresh інвалідується (ротація).
+- **`Fundraiser.CurrentProgress`** and **`FundraiserAssignment.AmountRaised`** are not stored in the database - they are computed on the fly as `SUM(Donations.Amount)`. This eliminates desync between aggregated totals and actual donation records.
+- **`Donation.UserId`** and **`Donation.FundraiserAssignmentId`** are nullable: a donation can be made anonymously and/or without being tied to a specific organization (a direct donation on the fundraiser page).
+- **`PrivateMessage.SenderId`** and **`ReceiverId`** are nullable with `OnDelete(SetNull)`: deleting a user does not cascade-delete their entire message history.
+- **`RefreshToken.IsRevoked`** - each time an access token is refreshed, the old refresh token is invalidated (rotation).
